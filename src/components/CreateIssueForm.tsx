@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { createIssue } from '../bd/commands';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { VALIDATION, validateTitle, PRIORITY_LABELS } from '../utils/constants';
 
 interface CreateIssueFormProps {
@@ -17,12 +16,12 @@ const ISSUE_TYPES: CreatableIssueType[] = ['task', 'epic', 'bug', 'feature', 'ch
 
 export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const terminalHeight = useBeadsStore(state => state.terminalHeight);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const showToast = useBeadsStore(state => state.showToast);
   const showConfirm = useBeadsStore(state => state.showConfirm);
   const showConfirmDialog = useBeadsStore(state => state.showConfirmDialog);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   const [currentField, setCurrentField] = useState<FormField>('title');
   const [formData, setFormData] = useState({
@@ -192,7 +191,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
       </Box>
 
       {/* Form Content */}
-      <Box flexDirection="column" padding={2} borderStyle="single" borderColor={primaryColor}>
+      <Box flexDirection="column" padding={2} borderStyle={glyphs.border('single')} borderColor={primaryColor}>
         {/* Title - with character count */}
         <Box flexDirection="column" marginBottom={2}>
           <Box justifyContent="space-between">
@@ -204,7 +203,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
             </Text>
           </Box>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={
               currentField === 'title'
                 ? (titleValidation.valid || formData.title === '' ? primaryColor : theme.colors.error)
@@ -227,7 +226,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
             <Text color={currentField === 'priority' ? primaryColor : theme.colors.text} bold>
               Priority {currentField === 'priority' && <Text color={primaryColor}>(use up/down)</Text>}
             </Text>
-            <Box borderStyle="single" borderColor={currentField === 'priority' ? primaryColor : theme.colors.border} paddingX={1}>
+            <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'priority' ? primaryColor : theme.colors.border} paddingX={1}>
               <Text color={theme.colors.text}>
                 P{formData.priority} - {PRIORITY_LABELS[formData.priority]}
               </Text>
@@ -239,7 +238,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
             <Text color={currentField === 'type' ? primaryColor : theme.colors.text} bold>
               Type {currentField === 'type' && <Text color={primaryColor}>(use up/down)</Text>}
             </Text>
-            <Box borderStyle="single" borderColor={currentField === 'type' ? primaryColor : theme.colors.border} paddingX={1}>
+            <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'type' ? primaryColor : theme.colors.border} paddingX={1}>
               <Text color={theme.colors.text}>{formData.issueType}</Text>
             </Box>
           </Box>
@@ -255,7 +254,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
               {formData.description.length}/{VALIDATION.description.maxLength}
             </Text>
           </Box>
-          <Box borderStyle="single" borderColor={currentField === 'description' ? primaryColor : theme.colors.border} paddingX={1}>
+          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'description' ? primaryColor : theme.colors.border} paddingX={1}>
             <Text>{formData.description || <Text color={theme.colors.textDim}>(optional - enter issue description)</Text>}</Text>
             {currentField === 'description' && <Text color={theme.colors.textDim}>|</Text>}
           </Box>
@@ -266,7 +265,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
           <Text color={currentField === 'assignee' ? primaryColor : theme.colors.text} bold>
             Assignee {currentField === 'assignee' && <Text color={primaryColor}>(editing)</Text>}
           </Text>
-          <Box borderStyle="single" borderColor={currentField === 'assignee' ? primaryColor : theme.colors.border} paddingX={1}>
+          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'assignee' ? primaryColor : theme.colors.border} paddingX={1}>
             <Text>{formData.assignee || <Text color={theme.colors.textDim}>(optional - assign to someone)</Text>}</Text>
             {currentField === 'assignee' && <Text color={theme.colors.textDim}>|</Text>}
           </Box>
@@ -277,7 +276,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
           <Text color={currentField === 'labels' ? primaryColor : theme.colors.text} bold>
             Labels {currentField === 'labels' && <Text color={primaryColor}>(editing)</Text>}
           </Text>
-          <Box borderStyle="single" borderColor={currentField === 'labels' ? primaryColor : theme.colors.border} paddingX={1}>
+          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'labels' ? primaryColor : theme.colors.border} paddingX={1}>
             <Text>{formData.labels || <Text color={theme.colors.textDim}>(optional - comma-separated labels)</Text>}</Text>
             {currentField === 'labels' && <Text color={theme.colors.textDim}>|</Text>}
           </Box>
@@ -290,7 +289,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
 
         {/* Status messages */}
         {error && (
-          <Box marginTop={1} borderStyle="single" borderColor={theme.colors.error} paddingX={1}>
+          <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.error} paddingX={1}>
             <Text color={theme.colors.error} bold>Error: </Text>
             <Text color={theme.colors.error}>{error}</Text>
           </Box>
@@ -304,7 +303,7 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
       </Box>
 
       {/* Footer */}
-      <Box marginTop={1} borderStyle="single" borderColor={theme.colors.border} paddingX={1}>
+      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
         <Box justifyContent="space-between">
           <Text dimColor>
             Tab/Shift+Tab: Navigate | up/down: Change values | Enter: Submit | ESC: Cancel

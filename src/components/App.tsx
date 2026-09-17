@@ -4,7 +4,6 @@ import { useBeadsStore, isModalOpen } from '../state/store';
 import { Board } from './Board';
 import { BeadsWatcher } from '../bd/watcher';
 import { loadBeads, findBeadsDir } from '../bd/parser';
-import { getTheme } from '../themes/themes';
 
 export function App() {
   const { exit } = useApp();
@@ -13,8 +12,7 @@ export function App() {
   const setTerminalSize = useBeadsStore(state => state.setTerminalSize);
   const setReloadCallback = useBeadsStore(state => state.setReloadCallback);
   const setBeadsPath = useBeadsStore(state => state.setBeadsPath);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

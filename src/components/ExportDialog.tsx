@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { useBeadsStore } from '../state/store';
 import { copyToClipboard, exportToFile, formatIssueMarkdown, formatIssueJSON, formatIssuePlainText } from '../utils/export';
 import type { Issue } from '../types';
 
@@ -19,6 +20,8 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
   const [selectedAction, setSelectedAction] = useState<ExportAction>('clipboard');
   const [isExporting, setIsExporting] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   useInput(async (input, key) => {
     // ESC to close
@@ -112,28 +115,33 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
   return (
     <Box
       flexDirection="column"
-      borderStyle="double"
-      borderColor="green"
+      borderStyle={glyphs.border('double')}
+      borderColor={theme.colors.primary}
       padding={1}
       width={70}
-      backgroundColor="black"
+      backgroundColor={theme.colors.surface}
     >
-      <Text bold color="green">
+      <Text {...theme.ink.strong}>
         Export Issue: {issue.id}
       </Text>
-      <Text dimColor>
-        ESC to cancel | ←/→ change format | ↑/↓ change action | Enter to export
+      <Text {...theme.ink.faint}>
+        ESC to cancel | {glyphs.arrowLeft}/{glyphs.arrowRight} change format | {glyphs.scrollUp}/{glyphs.scrollDown} change action | Enter to export
       </Text>
 
       <Box flexDirection="column" marginTop={1}>
         {/* Format selection */}
         <Box marginBottom={1}>
-          <Text bold color="yellow">Format:</Text>
+          <Text {...theme.ink.strong}>Format:</Text>
         </Box>
         <Box gap={2} marginBottom={1}>
           {FORMATS.map(format => (
-            <Box key={format} borderStyle="single" borderColor={selectedFormat === format ? 'green' : 'gray'} paddingX={1}>
-              <Text color={selectedFormat === format ? 'green' : 'gray'} bold={selectedFormat === format}>
+            <Box
+              key={format}
+              borderStyle={glyphs.border('single')}
+              borderColor={selectedFormat === format ? theme.colors.primary : theme.colors.border}
+              paddingX={1}
+            >
+              <Text {...(selectedFormat === format ? theme.ink.strong : theme.ink.faint)}>
                 {format.toUpperCase()}
               </Text>
             </Box>
@@ -142,27 +150,27 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
 
         {/* Action selection */}
         <Box marginBottom={1}>
-          <Text bold color="yellow">Action:</Text>
+          <Text {...theme.ink.strong}>Action:</Text>
         </Box>
         <Box flexDirection="column" gap={0} marginBottom={1}>
           <Box>
-            <Text color={selectedAction === 'clipboard' ? 'green' : 'gray'}>
-              {selectedAction === 'clipboard' ? '▶ ' : '  '}
+            <Text {...(selectedAction === 'clipboard' ? theme.ink.strong : theme.ink.faint)}>
+              {selectedAction === 'clipboard' ? `${glyphs.selectArrow} ` : '  '}
               Copy to Clipboard
             </Text>
           </Box>
           <Box>
-            <Text color={selectedAction === 'file' ? 'green' : 'gray'}>
-              {selectedAction === 'file' ? '▶ ' : '  '}
+            <Text {...(selectedAction === 'file' ? theme.ink.strong : theme.ink.faint)}>
+              {selectedAction === 'file' ? `${glyphs.selectArrow} ` : '  '}
               Export to File
             </Text>
           </Box>
         </Box>
 
         {/* Preview */}
-        <Box flexDirection="column" borderStyle="single" borderColor="gray" padding={1} marginTop={1}>
-          <Text dimColor>Preview:</Text>
-          <Text>
+        <Box flexDirection="column" borderStyle={glyphs.border('single')} borderColor={theme.colors.border} padding={1} marginTop={1}>
+          <Text {...theme.ink.faint}>Preview:</Text>
+          <Text {...theme.ink.text}>
             {selectedFormat === 'markdown' && '# '}
             {issue.title.substring(0, 50)}
             {issue.title.length > 50 && '...'}
@@ -173,7 +181,7 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
       {/* Status message */}
       {status && (
         <Box marginTop={1}>
-          <Text color={status.type === 'success' ? 'green' : 'red'}>
+          <Text color={status.type === 'success' ? theme.colors.success : theme.colors.error}>
             {status.message}
           </Text>
         </Box>
@@ -182,7 +190,7 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
       {/* Loading indicator */}
       {isExporting && (
         <Box marginTop={1}>
-          <Text color="yellow">Exporting...</Text>
+          <Text color={theme.colors.warning}>Exporting...</Text>
         </Box>
       )}
     </Box>

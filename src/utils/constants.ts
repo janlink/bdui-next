@@ -1,6 +1,4 @@
-// Shared constants for colors, labels, and layout values
-// This centralizes all the color/label mappings to ensure consistency
-
+import { cellWidthOf, statusGlyphsOf, type GlyphSet } from '../session/glyphs';
 import { getTheme, type Theme } from '../themes/themes';
 
 // Layout constants
@@ -15,9 +13,9 @@ export const LAYOUT = {
   minTerminalHeight: 20,
   // Below splitViewMinWidth the Tree/Graph detail panel replaces the list; at or
   // above it, list and panel sit side by side and each keeps at least its min.
-  splitViewMinListWidth: 40,
+  splitViewMinListWidth: 70,
   splitViewMinPanelWidth: 50,
-  splitViewMinWidth: 92, // splitViewMinListWidth + splitViewMinPanelWidth + gap
+  splitViewMinWidth: 122, // splitViewMinListWidth + splitViewMinPanelWidth + gap
 } as const;
 
 // Space between the list and the detail panel; mirrors the panel Box marginLeft.
@@ -39,6 +37,81 @@ export function splitViewLayout(terminalWidth: number): {
     Math.min(LAYOUT.detailPanelWidth, terminalWidth - LAYOUT.splitViewMinListWidth - SPLIT_VIEW_GAP),
   );
   return { fits: true, listWidth: terminalWidth - panelWidth - SPLIT_VIEW_GAP, panelWidth };
+}
+
+// The list row is a fixed grid with one elastic column. Everything that has to
+// line up with a row reads these numbers, so a change moves them all at once.
+export const ROW_GRID = {
+  gutter: 1,
+  status: 1,
+  gap: 1,
+  id: 27,
+  meta: 12,
+} as const;
+
+/** Columns the grid spends before the title, at ambiguous-narrow width. */
+export const ROW_FIXED_COLUMNS =
+  ROW_GRID.gutter + ROW_GRID.status + ROW_GRID.gap + ROW_GRID.id + ROW_GRID.meta;
+
+export interface RowLayout {
+  gutter: number;
+  status: number;
+  gap: number;
+  id: number;
+  meta: number;
+  fixed: number;
+  title: number;
+}
+
+/**
+ * The grid in cells rather than characters, so that a gutter or status glyph the
+ * terminal draws two cells wide cannot shift the ID column.
+ */
+export function rowLayout(width: number, glyphs: GlyphSet): RowLayout {
+  const gutter = cellWidthOf([glyphs.gutter]);
+  const status = cellWidthOf(statusGlyphsOf(glyphs));
+  const fixed = gutter + status + ROW_GRID.gap + ROW_GRID.id + ROW_GRID.meta;
+  return {
+    gutter,
+    status,
+    gap: ROW_GRID.gap,
+    id: ROW_GRID.id,
+    meta: ROW_GRID.meta,
+    fixed,
+    title: Math.max(0, width - fixed),
+  };
+}
+
+export type ListView = 'tree' | 'graph' | 'memories' | 'kanban' | 'stats';
+
+// Rows each view spends on its own chrome, and on the chrome that frames its
+// detail panel. One table instead of an offset per call site, so a changed
+// header cannot leave a view one row short.
+const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
+  tree: { body: 5, panel: 5 },
+  graph: { body: 8, panel: 6 },
+  memories: { body: 7, panel: 7 },
+  kanban: { body: LAYOUT.uiOverhead, panel: 4 },
+  stats: { body: 2, panel: 2 },
+};
+
+export interface ListBudget {
+  body: number;
+  itemsPerPage: number;
+  panelHeight: number;
+}
+
+/**
+ * How many rows a view may draw into. `extraRows` covers content the view
+ * inserts between its chrome and its list, such as the graph's level labels.
+ */
+export function listBudget(view: ListView, height: number, extraRows = 0): ListBudget {
+  const chrome = VIEW_CHROME[view];
+  return {
+    body: Math.max(1, height - chrome.body),
+    itemsPerPage: Math.max(1, height - chrome.body - extraRows),
+    panelHeight: Math.max(1, height - chrome.panel),
+  };
 }
 
 // Rows the shared chrome above a view occupies when open. Each value covers the
@@ -107,9 +180,10 @@ export function getStatusColor(status: string, theme: Theme): string {
     in_progress: theme.colors.statusInProgress,
     blocked: theme.colors.statusBlocked,
     closed: theme.colors.statusClosed,
-    other: theme.colors.textDim,
+    deferred: theme.colors.statusDeferred,
+    other: theme.colors.statusOther,
   };
-  return colors[status] || theme.colors.text;
+  return colors[status] ?? theme.colors.statusOther;
 }
 
 // Helper function to get type color from theme
@@ -120,9 +194,9 @@ export function getTypeColor(type: string, theme: Theme): string {
     bug: theme.colors.typeBug,
     task: theme.colors.typeTask,
     chore: theme.colors.typeChore,
-    decision: theme.colors.accent,
+    decision: theme.colors.typeDecision,
   };
-  return colors[type] || theme.colors.text;
+  return colors[type] ?? theme.colors.typeOther;
 }
 
 // Truncate text with ellipsis, optionally at word boundary

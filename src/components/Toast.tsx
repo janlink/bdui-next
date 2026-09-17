@@ -1,12 +1,11 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 
 export function Toast() {
   const toastMessage = useBeadsStore(state => state.toastMessage);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const glyphs = useBeadsStore(state => state.glyphs);
+  const theme = useBeadsStore(state => state.theme);
 
   if (!toastMessage) return null;
 
@@ -33,7 +32,7 @@ export function Toast() {
       paddingX={1}
     >
       <Box
-        borderStyle="round"
+        borderStyle={glyphs.border('round')}
         borderColor={color}
         paddingX={2}
         paddingY={0}

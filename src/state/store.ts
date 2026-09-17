@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import type { BeadsData, Issue } from '../types';
 import { detectStatusChanges, notifyStatusChange } from '../utils/notifications';
-import { LAYOUT, hasActiveFilters } from '../utils/constants';
+import { LAYOUT, listBudget, hasActiveFilters } from '../utils/constants';
+import { DEFAULT_COLOR_DEPTH, type ColorDepth } from '../session/colors';
+import { DEFAULT_GLYPH_TIER, getGlyphs, type GlyphSet, type GlyphTier } from '../session/glyphs';
+import { getTheme, type Theme } from '../themes/themes';
 import { parseSearchQuery, issueMatchesParsedQuery, type ParsedQuery } from '../utils/search-query';
 import {
   STATUS_KEYS,
@@ -70,6 +73,12 @@ export interface BeadsStore {
     onConfirm: () => void;
   } | null;
   currentTheme: string;
+  // The resolved theme is stored, not derived on read: React.memo compares it by
+  // identity, so a component that recomputed it would re-render every row.
+  theme: Theme;
+  colorDepth: ColorDepth;
+  glyphTier: GlyphTier;
+  glyphs: GlyphSet;
   searchQuery: string;
   notificationsEnabled: boolean;
 
@@ -123,6 +132,7 @@ export interface BeadsStore {
   toggleThemeSelector: () => void;
   toggleJumpToPage: () => void;
   setTheme: (theme: string) => void;
+  setSessionAxes: (axes: { colorDepth: ColorDepth; glyphTier: GlyphTier }) => void;
   clearFilters: () => void;
   setViewMode: (mode: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories' | 'create-issue' | 'edit-issue') => void;
   navigateToCreateIssue: () => void;
@@ -259,6 +269,10 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   showConfirmDialog: false,
   confirmDialogData: null,
   currentTheme: 'default',
+  theme: getTheme('default', DEFAULT_COLOR_DEPTH),
+  colorDepth: DEFAULT_COLOR_DEPTH,
+  glyphTier: DEFAULT_GLYPH_TIER,
+  glyphs: getGlyphs(DEFAULT_GLYPH_TIER),
   searchQuery: '',
   notificationsEnabled: true, // Enabled by default
 
@@ -274,9 +288,8 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   statusVisibility: { ...DEFAULT_STATUS_VISIBILITY },
 
   setTerminalSize: (width, height) => {
-    const uiOverhead = LAYOUT.uiOverhead;
     const issueCardHeight = LAYOUT.issueCardHeight;
-    const availableHeight = Math.max(height - uiOverhead, issueCardHeight);
+    const availableHeight = Math.max(listBudget('kanban', height).body, issueCardHeight);
     const itemsPerPage = Math.max(Math.floor(availableHeight / issueCardHeight), 1);
     const columnStates = { ...get().columnStates };
     for (const statusKey of STATUS_KEYS) {
@@ -616,7 +629,16 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
     }));
   },
 
-  setTheme: (theme) => set({ currentTheme: theme }),
+  setTheme: (theme) =>
+    set(state => ({ currentTheme: theme, theme: getTheme(theme, state.colorDepth) })),
+
+  setSessionAxes: ({ colorDepth, glyphTier }) =>
+    set(state => ({
+      colorDepth,
+      glyphTier,
+      glyphs: getGlyphs(glyphTier),
+      theme: getTheme(state.currentTheme, colorDepth),
+    })),
 
   clearFilters: () => {
     set({

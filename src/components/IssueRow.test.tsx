@@ -1,113 +1,123 @@
-import { expect, test } from 'bun:test';
+import { afterAll, describe, expect, test } from 'bun:test';
 import React from 'react';
-import { Readable, Writable } from 'node:stream';
-import { Box, render } from 'ink';
-import stringWidth from 'string-width';
+import { Box } from 'ink';
+import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { normalizeBeads } from '../bd/parser';
+import { getGlyphs } from '../session/glyphs';
 import { getTheme } from '../themes/themes';
+import { rowLayout } from '../utils/constants';
 import { buildVisibleTree, flattenTree } from '../utils/tree';
+import { renderLines } from '../test-utils/ink-render';
 import { ListRow } from './IssueRow';
-import type { TreeNode } from '../utils/tree';
+import type { FlatNode } from '../utils/tree';
 
-const ANSI = /\u001B\[[0-9;?]*[A-Za-z]/g;
+const theme = getTheme('default', 'ansi256');
+const glyphs = getGlyphs('fancy');
 
-// Ink writes cursor escapes and the frame as separate chunks, and unmounting
-// emits a second frame. Only the first chunk carrying text is one full frame.
-async function renderLines(node: React.ReactNode, columns: number): Promise<string[]> {
-  const chunks: string[] = [];
-  const stdout = new Writable({
-    write(chunk, _encoding, callback) {
-      chunks.push(chunk.toString());
-      callback();
-    },
-  }) as NodeJS.WriteStream;
-  Object.assign(stdout, { columns, rows: 30, isTTY: true });
-  const stdin = new Readable({ read() {} }) as NodeJS.ReadStream;
-  Object.assign(stdin, {
-    isTTY: true,
-    isRaw: false,
-    setRawMode(mode: boolean) { this.isRaw = mode; return this; },
-    ref() { return this; },
-    unref() { return this; },
-  });
-
-  await new Promise<void>((resolve) => {
-    let instance: ReturnType<typeof render>;
-    instance = render(node, {
-      stdout,
-      stdin,
-      debug: true,
-      patchConsole: false,
-      onRender: () => queueMicrotask(() => {
-        instance.unmount();
-        resolve();
-      }),
-    });
-  });
-
-  const frame = chunks.map(chunk => chunk.replace(ANSI, '')).find(chunk => chunk.trim().length > 0);
-  if (frame === undefined) throw new Error('render produced no frame');
-  return frame.split('\n').filter(line => line.length > 0);
-}
-
+// One row per depth, with the long ids the bd workspaces of real projects grow.
 const data = normalizeBeads([
   { id: 'bd-0001', title: 'Root epic whose title is far too long to fit into a narrow terminal window', status: 'open', issue_type: 'epic', priority: 1 },
-  { id: 'bd-0002', title: '日本語のタイトルは全角文字なので表示幅が二倍になる', status: 'in_progress', issue_type: 'task', priority: 2,
-    dependencies: [{ issue_id: 'bd-0002', depends_on_id: 'bd-0001', type: 'parent-child' }] },
-  { id: 'bd-0003', title: 'Short one 🚀', status: 'open', issue_type: 'bug', priority: 3,
-    dependencies: [
-      { issue_id: 'bd-0003', depends_on_id: 'bd-0001', type: 'parent-child' },
-      { issue_id: 'bd-0003', depends_on_id: 'bd-0004', type: 'blocks' },
-    ] },
-  { id: 'bd-0004', title: 'Blocker', status: 'open', issue_type: 'task', priority: 0 },
+  { id: 'bdui-1a8.23', title: '日本語のタイトルは全角文字なので表示幅が二倍になる', status: 'in_progress', issue_type: 'task', priority: 2,
+    dependencies: [{ issue_id: 'bdui-1a8.23', depends_on_id: 'bd-0001', type: 'parent-child' }] },
+  { id: 'bdui-1a8.23.14', title: 'Short one 🚀', status: 'open', issue_type: 'bug', priority: 3,
+    dependencies: [{ issue_id: 'bdui-1a8.23.14', depends_on_id: 'bdui-1a8.23', type: 'parent-child' }] },
+  { id: 'bd-0004', title: 'Closed chore', status: 'closed', issue_type: 'chore', priority: 4 },
 ]);
 
-const tree: TreeNode[] = buildVisibleTree(data, new Set(data.issues.map(issue => issue.id)));
-const theme = getTheme('default');
+const nodes: FlatNode[] = flattenTree(buildVisibleTree(data, new Set(data.issues.map(i => i.id))));
 
-for (const width of [40, 60, 120]) {
-  test(`rows stay inside a ${width}-column terminal`, async () => {
-    const nodes = flattenTree(tree);
-    const lines = await renderLines(
-      <Box flexDirection="column" width={width}>
-        {nodes.map((node, idx) => (
-          <ListRow key={node.issue.id} node={node} isSelected={idx === 1} theme={theme} width={width} />
-        ))}
-      </Box>,
-      width,
-    );
+const WIDTHS = [60, 70, 122, 140];
+const AMBIGUOUS_MODES = ['narrow', 'wide'] as const;
 
-    expect(lines).toHaveLength(nodes.length);
-    for (const line of lines) expect(stringWidth(line)).toBeLessThanOrEqual(width);
+afterAll(() => setAmbiguousWidth('narrow'));
+
+function rows(selectedIndex: number, width: number) {
+  return (
+    <Box flexDirection="column" width={width}>
+      {nodes.map((node, index) => (
+        <ListRow
+          key={node.issue.id}
+          node={node}
+          isSelected={index === selectedIndex}
+          theme={theme}
+          glyphs={glyphs}
+          width={width}
+        />
+      ))}
+    </Box>
+  );
+}
+
+for (const mode of AMBIGUOUS_MODES) {
+  describe(`row geometry (ambiguous ${mode})`, () => {
+    for (const width of WIDTHS) {
+      test(`at ${width} columns every row measures exactly ${width} cells`, async () => {
+        setAmbiguousWidth(mode);
+        const lines = await renderLines(rows(0, width), width);
+        expect(lines).toHaveLength(nodes.length);
+        for (const line of lines) {
+          expect(stringWidth(line)).toBe(width);
+        }
+        setAmbiguousWidth('narrow');
+      });
+
+      test(`at ${width} columns the id starts at the same index on every depth`, async () => {
+        setAmbiguousWidth(mode);
+        const grid = rowLayout(width, glyphs);
+        const lines = await renderLines(rows(0, width), width);
+        setAmbiguousWidth('narrow');
+
+        const idStart = grid.gutter + grid.status + grid.gap;
+        for (const line of lines) {
+          const before = [...line].reduce<{ text: string; cells: number }>(
+            (acc, character) => (acc.cells >= idStart
+              ? acc
+              : { text: acc.text + character, cells: acc.cells + stringWidth(character) }),
+            { text: '', cells: 0 },
+          );
+          expect(before.cells).toBe(idStart);
+        }
+      });
+    }
   });
 }
 
-test('row truncates an oversized title with an ellipsis', async () => {
-  const nodes = flattenTree(tree);
-  const lines = await renderLines(
-    <Box flexDirection="column" width={60}>
-      {nodes.map(node => (
-        <ListRow key={node.issue.id} node={node} isSelected={false} theme={theme} width={60} />
-      ))}
-    </Box>,
-    60,
-  );
+describe('row content', () => {
+  test('truncates a long title on the right', async () => {
+    const [root] = await renderLines(rows(-1, 60), 60);
+    expect(root).toContain(glyphs.ellipsis);
+    expect(root).not.toContain('narrow terminal window');
+  });
 
-  expect(lines[0]).toContain('Root epic whose title');
-  expect(lines[0]!.endsWith('…')).toBe(true);
-  expect(lines[0]).not.toContain('narrow terminal window');
-});
+  test('truncates a long id on the left, keeping the tail', async () => {
+    const deep = nodes[2]!;
+    const node = { ...deep, issue: { ...deep.issue, id: 'bdui-platform-1a8.23.14.7' } };
+    const [line] = await renderLines(
+      <ListRow node={node} isSelected={false} theme={theme} glyphs={glyphs} width={60} />,
+      60,
+    );
+    expect(line).toContain(`${glyphs.ellipsis}`);
+    expect(line).toContain('.23.14.7');
+    expect(line).not.toContain('bdui-platform');
+  });
 
-test('wide-character title is truncated on display width, not code units', async () => {
-  const cjk = flattenTree(tree).find(node => node.issue.id === 'bd-0002')!;
-  const lines = await renderLines(
-    <Box flexDirection="column" width={44}>
-      <ListRow node={cjk} isSelected={false} theme={theme} width={44} />
-    </Box>,
-    44,
-  );
+  test('ends the row flush right with the meta column', async () => {
+    const lines = await renderLines(rows(-1, 70), 70);
+    for (const line of lines) {
+      expect(line.endsWith(' ')).toBe(false);
+    }
+  });
 
-  expect(lines[0]).toContain('日本語');
-  expect(lines[0]!.endsWith('…')).toBe(true);
-  expect(stringWidth(lines[0]!)).toBeLessThanOrEqual(44);
+  test('shows a progress bar of constant width whatever the progress', async () => {
+    const widths = new Set<number>();
+    for (const closed of [0, 1, 2, 3]) {
+      const parent = { ...nodes[0]!, issue: { ...nodes[0]!.issue, progress: { closed, total: 3, percent: 0 } } };
+      const [line] = await renderLines(
+        <ListRow node={parent} isSelected={false} theme={theme} glyphs={glyphs} width={70} />,
+        70,
+      );
+      widths.add(stringWidth(line!));
+    }
+    expect([...widths]).toEqual([70]);
+  });
 });

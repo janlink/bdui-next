@@ -3,7 +3,6 @@ import { Box, Text } from 'ink';
 import type { Issue } from '../types';
 import { IssueCard } from './IssueCard';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { LAYOUT, getStatusColor } from '../utils/constants';
 
 interface StatusColumnProps {
@@ -27,8 +26,8 @@ export function StatusColumn({
   statusKey,
   width = LAYOUT.columnWidth,
 }: StatusColumnProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const glyphs = useBeadsStore(state => state.glyphs);
+  const theme = useBeadsStore(state => state.theme);
 
   const totalIssues = issues.length;
   const visibleIssues = issues.slice(scrollOffset, scrollOffset + itemsPerPage);
@@ -45,7 +44,7 @@ export function StatusColumn({
     <Box flexDirection="column" paddingX={1} width={width}>
       {/* Header */}
       <Box
-        borderStyle={isActive ? 'double' : 'single'}
+        borderStyle={glyphs.border(isActive ? 'double' : 'single')}
         borderColor={isActive ? theme.colors.primary : statusColor}
         paddingX={1}
         justifyContent="center"
@@ -71,7 +70,7 @@ export function StatusColumn({
             flexDirection="column"
             paddingX={1}
             paddingY={2}
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={theme.colors.border}
           >
             <Text color={theme.colors.textDim} italic>
@@ -116,7 +115,7 @@ export function StatusColumn({
       {totalPages > 1 && (
         <Box justifyContent="center" paddingTop={1}>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={isActive ? theme.colors.primary : theme.colors.border}
             paddingX={1}
           >

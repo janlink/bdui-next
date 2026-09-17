@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore, isModalOpen } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { getTypeColor, getStatusColor, getPriorityColor } from '../utils/constants';
 import { isStatusVisible, type StatusVisibility } from '../utils/visibility';
 import { DetailPanel } from './DetailPanel';
-import { Footer, getFooterHeight } from './Footer';
-import { splitViewLayout } from '../utils/constants';
+import { Footer } from './Footer';
+import { listBudget, splitViewLayout } from '../utils/constants';
 import type { Issue, BeadsData } from '../types';
 
 interface DependencyGraphProps {
@@ -90,16 +89,16 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
   const navigateToEditIssue = useBeadsStore(state => state.navigateToEditIssue);
   const toggleExportDialog = useBeadsStore(state => state.toggleExportDialog);
 
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const statusVisibility = useBeadsStore(state => state.statusVisibility);
   const modalOpen = useBeadsStore(isModalOpen);
 
   const levels = useMemo(() => buildDependencyLevels(data, statusVisibility), [data, statusVisibility]);
   const flatNodes = useMemo(() => levels.flat(), [levels]);
 
-  // Dense one-line nodes; leave room for header, per-level labels, legend and footer.
-  const itemsPerPage = Math.max(terminalHeight - 11 - getFooterHeight(), 5);
+  const budget = listBudget('graph', terminalHeight, levels.length);
+  const itemsPerPage = budget.itemsPerPage;
 
   // Details replace the list only when the terminal is too narrow to split; there
   // the arrow keys scroll the panel, otherwise they navigate the list.
@@ -153,12 +152,9 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
   if (levels.length === 0) {
     return (
       <Box flexDirection="column" padding={1}>
-        <Text bold color="cyan">BD TUI - Dependency Graph</Text>
+        <Text {...theme.ink.strong}>Graph</Text>
         <Box marginTop={1}>
-          <Text dimColor>No dependencies to visualize</Text>
-        </Box>
-        <Box marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-          <Text dimColor>1 list | 2 kanban | 3 tree | 4 graph | ? help | q quit</Text>
+          <Text {...theme.ink.faint}>No dependencies to visualize</Text>
         </Box>
       </Box>
     );
@@ -170,7 +166,7 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
   const detailsVisible = showDetails && selectedIssue !== undefined;
   const detailsAlongside = detailsVisible && split.fits;
   const listWidth = detailsAlongside ? split.listWidth : terminalWidth;
-  const detailHeight = terminalHeight - 4 - 4 - getFooterHeight();
+  const detailHeight = budget.panelHeight;
 
   // Group visible nodes back into levels for rendering
   const visibleLevels = new Map<number, GraphNode[]>();
@@ -182,16 +178,13 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
   }
 
   return (
-    <Box flexDirection="column" width="100%">
-      {/* Header */}
+    <Box flexDirection="column" width="100%" height={terminalHeight}>
       <Box marginBottom={1} flexDirection="column">
-        <Text bold color={theme.colors.primary}>
-          BD TUI - Dependency Graph
-        </Text>
+        <Text {...theme.ink.strong}>Graph</Text>
         <Box gap={2}>
-          <Text color={theme.colors.textDim}>With deps: <Text color={theme.colors.text}>{flatNodes.length}</Text></Text>
-          <Text color={theme.colors.textDim}>Levels: <Text color={theme.colors.text}>{levels.length}</Text></Text>
-          <Text color={theme.colors.textDim}>Selected: <Text color={theme.colors.primary}>{selectedIndex + 1}/{flatNodes.length}</Text></Text>
+          <Text {...theme.ink.faint}>With deps: <Text {...theme.ink.dim}>{flatNodes.length}</Text></Text>
+          <Text {...theme.ink.faint}>Levels: <Text {...theme.ink.dim}>{levels.length}</Text></Text>
+          <Text {...theme.ink.faint}>Selected: <Text {...theme.ink.dim}>{selectedIndex + 1}/{flatNodes.length}</Text></Text>
         </Box>
       </Box>
 
@@ -212,8 +205,8 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
 
               return (
                 <Box key={levelIdx} flexDirection="column">
-                  <Text color={theme.colors.warning} bold>
-                    Level {levelIdx} <Text color={theme.colors.textDim}>({totalInLevel})</Text>
+                  <Text {...theme.ink.dim} bold>
+                    Level {levelIdx} <Text {...theme.ink.faint}>({totalInLevel})</Text>
                   </Text>
 
                   {levelNodes.map((node) => {
@@ -226,28 +219,26 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
                     const nBlocks = node.issue.blocks?.length ?? 0;
                     const nChildren = node.issue.children?.length ?? 0;
 
-                    const gutter = isSelected ? '▸ ' : '  ';
+                    const gutter = isSelected ? `${glyphs.selectArrow} ` : '  ';
                     const idStr = `${node.issue.id}  `;
                     const badges = `${nBlockedBy ? ` x${nBlockedBy}` : ''}${nBlocks ? ` >${nBlocks}` : ''}${nChildren ? ` +${nChildren}` : ''}`;
                     const right = ` ${node.issue.issue_type} ${node.issue.displayStatus} P${node.issue.priority}${badges}`;
                     const titleWidth = Math.max(4, listWidth - 2 - gutter.length - idStr.length - right.length - 3);
                     const rawTitle = node.issue.title || node.issue.id;
-                    const title = rawTitle.length > titleWidth ? `${rawTitle.slice(0, titleWidth - 1)}…` : rawTitle;
+                    const title = rawTitle.length > titleWidth ? `${rawTitle.slice(0, titleWidth - 1)}${glyphs.ellipsis}` : rawTitle;
 
                     return (
                       <Box key={node.issue.id} marginLeft={2}>
                         <Text color={theme.colors.primary}>{gutter}</Text>
-                        <Text color={theme.colors.textDim}>{idStr}</Text>
-                        <Text bold={isSelected} color={isSelected ? theme.colors.primary : theme.colors.text}>
-                          {title}
-                        </Text>
+                        <Text {...theme.ink.faint}>{idStr}</Text>
+                        <Text {...(isSelected ? theme.ink.strong : theme.ink.text)}>{title}</Text>
                         <Box flexGrow={1} />
                         <Text color={typeColor}>{node.issue.issue_type} </Text>
                         <Text color={statusColor}>{node.issue.displayStatus} </Text>
                         <Text color={priorityColor}>P{node.issue.priority}</Text>
-                        {nBlockedBy > 0 && <Text color={theme.colors.statusBlocked}> ⊘{nBlockedBy}</Text>}
-                        {nBlocks > 0 && <Text color={theme.colors.warning}> →{nBlocks}</Text>}
-                        {nChildren > 0 && <Text color={theme.colors.accent}> ↳{nChildren}</Text>}
+                        {nBlockedBy > 0 && <Text color={theme.colors.statusBlocked}> {glyphs.graphBlocked}{nBlockedBy}</Text>}
+                        {nBlocks > 0 && <Text color={theme.colors.warning}> {glyphs.arrowRight}{nBlocks}</Text>}
+                        {nChildren > 0 && <Text color={theme.colors.textDim}> {glyphs.graphEdge}{nChildren}</Text>}
                       </Box>
                     );
                   })}
@@ -256,10 +247,10 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
             })}
 
             <Box marginTop={1} justifyContent="space-between">
-              <Text color={theme.colors.warning}>{scrollOffset > 0 ? `↑ ${scrollOffset} above` : ''}</Text>
-              <Text color={theme.colors.warning}>
+              <Text {...theme.ink.faint}>{scrollOffset > 0 ? `${glyphs.scrollUp} ${scrollOffset} above` : ''}</Text>
+              <Text {...theme.ink.faint}>
                 {scrollOffset + itemsPerPage < flatNodes.length
-                  ? `↓ ${flatNodes.length - (scrollOffset + itemsPerPage)} below`
+                  ? `${glyphs.scrollDown} ${flatNodes.length - (scrollOffset + itemsPerPage)} below`
                   : ''}
               </Text>
             </Box>
@@ -280,10 +271,10 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
 
       {/* Legend */}
       <Box paddingX={1} gap={2}>
-        <Text color={theme.colors.primary}>▸ selected</Text>
-        <Text color={theme.colors.statusBlocked}>⊘ blocked by</Text>
-        <Text color={theme.colors.warning}>→ blocks</Text>
-        <Text color={theme.colors.accent}>↳ children</Text>
+        <Text color={theme.colors.primary}>{glyphs.selectArrow} selected</Text>
+        <Text color={theme.colors.statusBlocked}>{glyphs.graphBlocked} blocked by</Text>
+        <Text color={theme.colors.warning}>{glyphs.arrowRight} blocks</Text>
+        <Text color={theme.colors.textDim}>{glyphs.graphEdge} children</Text>
       </Box>
 
       {/* Footer */}

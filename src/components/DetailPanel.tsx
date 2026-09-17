@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import {
   PRIORITY_LABELS,
   getPriorityColor,
@@ -89,7 +88,6 @@ export function detailPagingIsActive(overlays: DetailPagingOverlays): boolean {
 }
 
 export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePaging = true }: DetailPanelProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const pagingIsActive = useBeadsStore(state => detailPagingIsActive({
     showSearch: state.showSearch,
     showFilter: state.showFilter,
@@ -99,7 +97,8 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
     showHelp: state.showHelp,
     showConfirmDialog: state.showConfirmDialog,
   }));
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const [descriptionOffset, setDescriptionOffset] = useState(0);
   // The border and horizontal padding consume four cells. Reserve eight rows
@@ -134,7 +133,7 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
     return (
       <Box
         flexDirection="column"
-        borderStyle="single"
+        borderStyle={glyphs.border('single')}
         borderColor={theme.colors.border}
         padding={1}
         minWidth={50}
@@ -157,7 +156,7 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
+      borderStyle={glyphs.border('single')}
       borderColor={theme.colors.primary}
       padding={1}
       minWidth={50}
@@ -179,9 +178,9 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
           <Text color={theme.colors.text}>{descriptionPage.lines.join('\n')}</Text>
           {enablePaging && (descriptionPage.hasPrevious || descriptionPage.hasMore) && (
             <Text color={theme.colors.textDim}>
-              {descriptionPage.hasPrevious ? '↑ previous' : ''}
+              {descriptionPage.hasPrevious ? `${glyphs.scrollUp} previous` : ''}
               {descriptionPage.hasPrevious && descriptionPage.hasMore ? ' | ' : ''}
-              {descriptionPage.hasMore ? '↓ more' : ''}
+              {descriptionPage.hasMore ? `${glyphs.scrollDown} more` : ''}
             </Text>
           )}
         </Box>
@@ -233,7 +232,7 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
           <Text color={theme.colors.textDim}>Labels:</Text>
           <Box gap={1} flexWrap="wrap">
             {issue.labels.map(label => (
-              <Text key={label} color={theme.colors.secondary}>#{label}</Text>
+              <Text key={label} color={theme.colors.textDim}>#{label}</Text>
             ))}
           </Box>
         </Box>

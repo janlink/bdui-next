@@ -1,11 +1,10 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 
 export function HelpOverlay() {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   return (
     <Box
@@ -17,87 +16,95 @@ export function HelpOverlay() {
     >
       <Box
         flexDirection="column"
-        borderStyle="double"
+        borderStyle={glyphs.border('double')}
         borderColor={theme.colors.primary}
         padding={2}
-        backgroundColor="black"
+        backgroundColor={theme.colors.surface}
       >
         <Box marginBottom={1}>
-          <Text bold color={theme.colors.primary}>BD TUI - Keyboard Shortcuts</Text>
+          <Text {...theme.ink.strong} bold>BD TUI - Keyboard Shortcuts</Text>
         </Box>
 
         <Box flexDirection="column" gap={0}>
-          <Text bold color={theme.colors.warning}>Navigation:</Text>
-          <Text>  <Text color={theme.colors.primary}>left/right / h/l</Text>  Move between columns</Text>
-          <Text>  <Text color={theme.colors.primary}>up/down / k/j</Text>    Move up/down in column</Text>
-          <Text>  <Text color={theme.colors.primary}>0</Text>               Jump to first issue</Text>
-          <Text>  <Text color={theme.colors.primary}>$ or G</Text>          Jump to last issue</Text>
-          <Text>  <Text color={theme.colors.primary}>: or g</Text>          Open command bar</Text>
+          <Text {...theme.ink.strong} bold>Navigation:</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>left/right / h/l</Text>  Move between columns</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>up/down / k/j</Text>    Move up/down in column</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>0</Text>               Jump to first issue</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>$ or G</Text>          Jump to last issue</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>: or g</Text>          Open command bar</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text bold color={theme.colors.warning}>Views:</Text>
-          <Text>  <Text color={theme.colors.primary}>1</Text>              Tree view (hierarchical)</Text>
-          <Text>  <Text color={theme.colors.primary}>2</Text>              Kanban board view</Text>
-          <Text>  <Text color={theme.colors.primary}>3</Text>              Dependency graph (ASCII art)</Text>
-          <Text>  <Text color={theme.colors.primary}>4</Text>              Statistics & analytics dashboard</Text>
-          <Text>  <Text color={theme.colors.primary}>5</Text>              Memories (bd remember; d delete, r refresh)</Text>
+          <Text {...theme.ink.strong} bold>Views:</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>1</Text>              Tree view (hierarchical)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>2</Text>              Kanban board view</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>3</Text>              Dependency graph (ASCII art)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>4</Text>              Statistics & analytics dashboard</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>5</Text>              Memories (bd remember; d delete, r refresh)</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text bold color={theme.colors.warning}>Search & Filter:</Text>
-          <Text>  <Text color={theme.colors.primary}>/</Text>              Open search</Text>
-          <Text>  <Text color={theme.colors.primary}>f</Text>              Open filter panel</Text>
-          <Text>  <Text color={theme.colors.primary}>v</Text>              Choose which statuses are shown</Text>
-          <Text>  <Text color={theme.colors.primary}>c</Text>              Clear all filters and search</Text>
-          <Text color={theme.colors.textDim}>  (Closed is hidden by default; children of a shown parent stay visible)</Text>
+          <Text {...theme.ink.strong} bold>Search & Filter:</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>/</Text>              Open search</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>f</Text>              Open filter panel</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>v</Text>              Choose which statuses are shown</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>c</Text>              Clear all filters and search</Text>
+          <Text {...theme.ink.faint}>  (Closed is hidden by default; children of a shown parent stay visible)</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text bold color={theme.colors.warning}>Actions:</Text>
-          <Text>  <Text color={theme.colors.primary}>N</Text>              Create new issue (Shift+N)</Text>
-          <Text>  <Text color={theme.colors.primary}>e</Text>              Edit selected issue</Text>
-          <Text>  <Text color={theme.colors.primary}>x</Text>              Export/copy selected issue</Text>
-          <Text>  <Text color={theme.colors.primary}>Enter / Space</Text>  Toggle detail panel</Text>
-          <Text>  <Text color={theme.colors.primary}>r</Text>              Refresh data</Text>
-          <Text>  <Text color={theme.colors.primary}>u</Text>              Undo (view history)</Text>
+          <Text {...theme.ink.strong} bold>Actions:</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>N</Text>              Create new issue (Shift+N)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>e</Text>              Edit selected issue</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>x</Text>              Export/copy selected issue</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>Enter / Space</Text>  Toggle detail panel</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>r</Text>              Refresh data</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>u</Text>              Undo (view history)</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text bold color={theme.colors.warning}>Other:</Text>
-          <Text>  <Text color={theme.colors.primary}>t</Text>              Change theme / color scheme</Text>
-          <Text>  <Text color={theme.colors.primary}>n</Text>              Toggle notifications (sound + native)</Text>
-          <Text>  <Text color={theme.colors.primary}>?</Text>              Toggle this help</Text>
-          <Text>  <Text color={theme.colors.primary}>q / Ctrl+C</Text>     Quit</Text>
+          <Text {...theme.ink.strong} bold>Other:</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>t</Text>              Change theme / color scheme</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>n</Text>              Toggle notifications (sound + native)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>?</Text>              Toggle this help</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>q / Ctrl+C</Text>     Quit</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text bold color={theme.colors.warning}>Command Bar (: or g):</Text>
-          <Text>  <Text color={theme.colors.primary}>:5</Text>              Jump to page 5</Text>
-          <Text>  <Text color={theme.colors.primary}>:issue-id</Text>       Jump to issue by ID</Text>
-          <Text>  <Text color={theme.colors.primary}>:s o/i/b/c</Text>      Set status</Text>
-          <Text>  <Text color={theme.colors.primary}>:p 0-4</Text>          Set priority (P0 Critical → P4 Backlog)</Text>
-          <Text>  <Text color={theme.colors.primary}>:kanban/tree/graph/stats/mem</Text>  Switch view</Text>
-          <Text>  <Text color={theme.colors.primary}>:theme name</Text>     Change theme</Text>
-          <Text>  <Text color={theme.colors.primary}>:new :edit :q</Text>   Create, edit, quit</Text>
+          <Text {...theme.ink.strong} bold>Command Bar (: or g):</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:5</Text>              Jump to page 5</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:issue-id</Text>       Jump to issue by ID</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:s o/i/b/c</Text>      Set status</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:p 0-4</Text>          Set priority (P0 Critical {glyphs.arrowRight} P4 Backlog)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:kanban/tree/graph/stats/mem</Text>  Switch view</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:theme name</Text>     Change theme</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:new :edit :q</Text>   Create, edit, quit</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text bold color={theme.colors.warning}>Forms:</Text>
-          <Text color={theme.colors.textDim}>  Tab / Shift+Tab   Navigate between fields</Text>
-          <Text color={theme.colors.textDim}>  up/down           Change priority/status/type</Text>
-          <Text color={theme.colors.textDim}>  Enter             Submit (with confirmation)</Text>
-          <Text color={theme.colors.textDim}>  ESC               Cancel and return</Text>
+          <Text {...theme.ink.strong} bold>Forms:</Text>
+          <Text {...theme.ink.faint}>  Tab / Shift+Tab   Navigate between fields</Text>
+          <Text {...theme.ink.faint}>  up/down           Change priority/status/type</Text>
+          <Text {...theme.ink.faint}>  Enter             Submit (with confirmation)</Text>
+          <Text {...theme.ink.faint}>  ESC               Cancel and return</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text color={theme.colors.textDim}>Notifications alert you when:</Text>
-          <Text color={theme.colors.textDim}>  - Tasks are completed (status changes to closed)</Text>
-          <Text color={theme.colors.textDim}>  - Tasks become blocked</Text>
+          <Text {...theme.ink.faint}>Notifications alert you when:</Text>
+          <Text {...theme.ink.faint}>  - Tasks are completed (status changes to closed)</Text>
+          <Text {...theme.ink.faint}>  - Tasks become blocked</Text>
+        </Box>
+
+        <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
+          <Text {...theme.ink.strong} bold>Terminal:</Text>
+          <Text {...theme.ink.faint}>  bdui --glyph-check   Print all three glyph tiers to pick one</Text>
+          <Text {...theme.ink.faint}>  BDUI_GLYPHS          fancy | safe | ascii</Text>
+          <Text {...theme.ink.faint}>  BDUI_COLOR           auto | 256 | 16 | none</Text>
+          <Text {...theme.ink.faint}>  BDUI_AMBIGUOUS       auto | narrow | wide</Text>
         </Box>
 
         <Box marginTop={2} justifyContent="center">
-          <Text color={theme.colors.textDim}>Press ? to close</Text>
+          <Text {...theme.ink.faint}>Press ? to close</Text>
         </Box>
       </Box>
     </Box>

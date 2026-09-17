@@ -1,16 +1,15 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 
 export function SearchInput() {
   const searchQuery = useBeadsStore(state => state.searchQuery);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const setSearchQuery = useBeadsStore(state => state.setSearchQuery);
   const toggleSearch = useBeadsStore(state => state.toggleSearch);
   const getFilteredIssues = useBeadsStore(state => state.getFilteredIssues);
   const totalCount = useBeadsStore(state => state.data.issues.length);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   const filteredCount = getFilteredIssues().length;
 
@@ -34,7 +33,7 @@ export function SearchInput() {
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
+      borderStyle={glyphs.border('single')}
       borderColor={theme.colors.primary}
       paddingX={1}
       marginBottom={1}

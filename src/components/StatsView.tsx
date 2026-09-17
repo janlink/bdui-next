@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { hasActiveFilters } from '../utils/constants';
 import { Footer } from './Footer';
 
@@ -14,10 +13,10 @@ interface StatsViewProps {
 }
 
 export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }: StatsViewProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const filter = useBeadsStore(state => state.filter);
   const searchQuery = useBeadsStore(state => state.searchQuery);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const filtersActive = hasActiveFilters(filter, searchQuery);
 
@@ -92,14 +91,13 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
     return (
       <Box>
         <Text color={color}>{padLabel(label)}</Text>
-        <Text color={color}>{'█'.repeat(filled)}</Text>
-        <Text color={theme.colors.textDim}>{'░'.repeat(empty)}</Text>
+        <Text color={color}>{glyphs.barDone.repeat(filled)}</Text>
+        <Text {...theme.ink.rule}>{glyphs.barEmpty.repeat(empty)}</Text>
         <Text color={theme.colors.textDim}> {count} ({pct}%)</Text>
       </Box>
     );
   };
 
-  // Full-width stacked progress bar across the status spectrum (done → open).
   const total = issues.length;
   const overviewBarWidth = Math.max(10, terminalWidth - 8);
   const segments = [
@@ -116,7 +114,7 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
     const target = total > 0 ? Math.round((cumulative / total) * overviewBarWidth) : 0;
     const length = Math.max(0, target - used);
     used = target;
-    return { color: segment.color, text: '█'.repeat(length) };
+    return { color: segment.color, text: glyphs.barDone.repeat(length) };
   });
   const remainder = Math.max(0, overviewBarWidth - used);
 
@@ -134,25 +132,25 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
       </Box>
 
       {/* Overview: flagship progress bar */}
-      <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1} marginTop={1}>
+      <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1} marginTop={1}>
         <Box>
           <Text bold color={theme.colors.primary}>Overview</Text>
           <Box flexGrow={1} />
           <Text color={theme.colors.success} bold>{stats.completionRate}% complete</Text>
-          <Text color={theme.colors.textDim}> · {stats.statusCounts.closed}/{total} done</Text>
+          <Text color={theme.colors.textDim}> {glyphs.middot} {stats.statusCounts.closed}/{total} done</Text>
         </Box>
         <Box>
           {segChars.map((segment, index) => (
             <Text key={index} color={segment.color}>{segment.text}</Text>
           ))}
-          {remainder > 0 && <Text color={theme.colors.textDim}>{'░'.repeat(remainder)}</Text>}
+          {remainder > 0 && <Text {...theme.ink.rule}>{glyphs.barEmpty.repeat(remainder)}</Text>}
         </Box>
         <Box gap={3}>
-          <Box gap={1}><Text color={theme.colors.statusOpen}>●</Text><Text color={theme.colors.textDim}>{stats.statusCounts.open} open</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusInProgress}>●</Text><Text color={theme.colors.textDim}>{stats.statusCounts.in_progress} in progress</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusBlocked}>●</Text><Text color={theme.colors.textDim}>{stats.statusCounts.blocked} blocked</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusClosed}>●</Text><Text color={theme.colors.textDim}>{stats.statusCounts.closed} closed</Text></Box>
-          <Box gap={1}><Text color={theme.colors.textDim}>●</Text><Text color={theme.colors.textDim}>{stats.statusCounts.other} other</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusOpen}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.open} open</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusInProgress}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.in_progress} in progress</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusBlocked}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.blocked} blocked</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusClosed}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.closed} closed</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusOther}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.other} other</Text></Box>
         </Box>
       </Box>
 
@@ -161,7 +159,7 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
         {/* Left column */}
         <Box flexDirection="column" width={useWideLayout ? columnWidth : undefined} gap={1}>
           {/* Status */}
-          <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1}>
+          <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
             <Text bold color={theme.colors.primary}>Status</Text>
             <Box flexDirection="column">
               {renderBar('Open', stats.statusCounts.open, total, theme.colors.statusOpen)}
@@ -173,7 +171,7 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
           </Box>
 
           {/* Priority */}
-          <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1}>
+          <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
             <Text bold color={theme.colors.primary}>Priority</Text>
             <Box flexDirection="column">
               {renderBar('P0 Critical', stats.priorityCounts.p0, total, theme.colors.priorityCritical)}
@@ -188,7 +186,7 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
         {/* Right column */}
         <Box flexDirection="column" width={useWideLayout ? columnWidth : undefined} gap={1}>
           {/* Types */}
-          <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1}>
+          <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
             <Text bold color={theme.colors.primary}>Type</Text>
             <Box flexDirection="column">
               {stats.typeCounts.epic > 0 && renderBar('Epic', stats.typeCounts.epic, total, theme.colors.typeEpic)}
@@ -196,19 +194,19 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
               {stats.typeCounts.bug > 0 && renderBar('Bug', stats.typeCounts.bug, total, theme.colors.typeBug)}
               {stats.typeCounts.task > 0 && renderBar('Task', stats.typeCounts.task, total, theme.colors.typeTask)}
               {stats.typeCounts.chore > 0 && renderBar('Chore', stats.typeCounts.chore, total, theme.colors.typeChore)}
-              {stats.typeCounts.decision > 0 && renderBar('Decision', stats.typeCounts.decision, total, theme.colors.accent)}
+              {stats.typeCounts.decision > 0 && renderBar('Decision', stats.typeCounts.decision, total, theme.colors.typeDecision)}
               {stats.typeCounts.other > 0 && renderBar('Other', stats.typeCounts.other, total, theme.colors.textDim)}
             </Box>
           </Box>
 
           {/* Assignees */}
-          <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1}>
+          <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
             <Text bold color={theme.colors.primary}>Assignees</Text>
             <Box flexDirection="column">
               {stats.topAssignees.length > 0 ? (
                 stats.topAssignees.map(([assignee, count]) => {
                   const displayName = assignee.length > labelWidth - 1
-                    ? assignee.slice(0, labelWidth - 2) + '…'
+                    ? assignee.slice(0, labelWidth - 2) + glyphs.ellipsis
                     : assignee;
                   const color = assignee === 'unassigned' ? theme.colors.textDim : theme.colors.text;
                   return <Box key={assignee}>{renderBar(displayName, count, total, color)}</Box>;
@@ -220,15 +218,15 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
           </Box>
 
           {/* Labels */}
-          <Box flexDirection="column" borderStyle="round" borderColor={theme.colors.border} paddingX={1}>
+          <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
             <Text bold color={theme.colors.primary}>Labels</Text>
             <Box flexDirection="column">
               {stats.topLabels.length > 0 ? (
                 stats.topLabels.map(([label, count]) => {
                   const displayLabel = '#' + (label.length > labelWidth - 2
-                    ? label.slice(0, labelWidth - 3) + '…'
+                    ? label.slice(0, labelWidth - 3) + glyphs.ellipsis
                     : label);
-                  return <Box key={label}>{renderBar(displayLabel, count, total, theme.colors.secondary)}</Box>;
+                  return <Box key={label}>{renderBar(displayLabel, count, total, theme.colors.textDim)}</Box>;
                 })
               ) : (
                 <Text color={theme.colors.textDim}>No labels</Text>

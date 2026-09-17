@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { getStatusColor } from '../utils/constants';
 import { STATUS_KEYS, STATUS_LABELS, statusCategory } from '../utils/visibility';
 
@@ -10,8 +9,8 @@ interface VisibilityPanelProps {
 }
 
 export function VisibilityPanel({ onClose }: VisibilityPanelProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const data = useBeadsStore(state => state.data);
   const statusVisibility = useBeadsStore(state => state.statusVisibility);
   const toggleStatusVisibility = useBeadsStore(state => state.toggleStatusVisibility);
@@ -54,14 +53,14 @@ export function VisibilityPanel({ onClose }: VisibilityPanelProps) {
   return (
     <Box
       flexDirection="column"
-      borderStyle="double"
+      borderStyle={glyphs.border('double')}
       borderColor={theme.colors.primary}
       padding={1}
       width={48}
-      backgroundColor={theme.colors.background}
+      backgroundColor={theme.colors.surface}
     >
       <Text bold color={theme.colors.primary}>Show statuses</Text>
-      <Text color={theme.colors.textDim}>Space toggle · r reset · Esc/Enter close</Text>
+      <Text color={theme.colors.textDim}>Space toggle {glyphs.middot} r reset {glyphs.middot} Esc/Enter close</Text>
 
       <Box flexDirection="column" marginTop={1}>
         {STATUS_KEYS.map((key, index) => {
@@ -69,7 +68,7 @@ export function VisibilityPanel({ onClose }: VisibilityPanelProps) {
           const checked = statusVisibility[key];
           return (
             <Box key={key}>
-              <Text color={theme.colors.primary}>{isSelected ? '▸ ' : '  '}</Text>
+              <Text color={theme.colors.primary}>{isSelected ? `${glyphs.caretCollapsed} ` : '  '}</Text>
               <Text color={checked ? theme.colors.success : theme.colors.textDim}>
                 {checked ? '[x]' : '[ ]'}
               </Text>

@@ -200,10 +200,10 @@ test('all detail layouts use their actual available width', async () => {
 
 test('detail paging starts exactly one row past each visible layout boundary', async () => {
   const layouts = [
-    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 120, pageRows: 15 },
-    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 15 },
-    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 14 },
-    { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 9 },
+    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 120, pageRows: 18 },
+    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 18 },
+    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 17 },
+    { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 16 },
   ];
 
   for (const layout of layouts) {
