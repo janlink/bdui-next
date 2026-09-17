@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { detailPagingIsActive, getDescriptionPage } from './DetailPanel';
-import { FOOTER_PRIMARY_SHORTCUTS } from './Footer';
+import { FOOTER_HINT_WORDS } from './Footer';
 
 test('description pages preserve all content for scrolling', () => {
   const description = 'first line\n' + 'word '.repeat(30) + 'final marker';
@@ -70,5 +70,5 @@ test('final description page keeps its valid page offset', () => {
 });
 
 test('footer advertises the open-details shortcut', () => {
-  expect(FOOTER_PRIMARY_SHORTCUTS).toContain('Enter/Space details');
+  expect(FOOTER_HINT_WORDS).toContain('details');
 });

@@ -5,7 +5,6 @@ import { getGlyphs } from '../session/glyphs';
 import { isModalOpen, useBeadsStore } from '../state/store';
 import { getTheme } from '../themes/themes';
 import { splitViewLayout } from '../utils/constants';
-import { FOOTER_PRIMARY_SHORTCUTS } from './Footer';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { pressKeys, renderLines } from '../test-utils/ink-render';
 import { Board } from './Board';
@@ -66,47 +65,43 @@ describe('view chrome', () => {
     test(`${viewMode} fills exactly ${HEIGHT} rows and ends on the footer`, async () => {
       const lines = await frameOf({ viewMode });
       expect(lines).toHaveLength(HEIGHT);
-      expect(lines[HEIGHT - 2]).toContain(FOOTER_PRIMARY_SHORTCUTS);
-      expect(lines[HEIGHT - 1]).toContain('Tree');
-      expect(lines[HEIGHT - 1]).toContain('Memories');
+      expect(lines[HEIGHT - 2]).toContain('Tree');
+      expect(lines[HEIGHT - 2]).toContain('Memories');
+      expect(lines[HEIGHT - 2]).toContain('? help');
+      expect(lines[HEIGHT - 1]).toContain('deferred');
     });
   }
 
-  test('tree keeps its legend directly above the footer', async () => {
-    const lines = await frameOf({ viewMode: 'tree' });
-    expect(lines[HEIGHT - 3]).toContain('deferred');
-  });
-
-  // 20 rows leave 14 for the list: header, column heads, 14 rows, the trailer,
-  // the legend and the two footer rows.
+  // 20 rows leave 15 for the list: header, column heads, 15 rows, the trailer
+  // and the two footer rows.
   test('tree counts the rows below the window in a trailer under the list', async () => {
     const lines = await frameOf({ viewMode: 'tree', terminalHeight: 20, showDetails: false });
     expect(lines).toHaveLength(20);
-    expect(lines[15]).toContain('bd-0013');
-    expect(lines[16]!.trimEnd().endsWith(`${getGlyphs('fancy').scrollDown} 18 more`)).toBe(true);
-    expect(lines[17]).toContain('deferred');
+    expect(lines[16]).toContain('bd-0014');
+    expect(lines[17]!.trimEnd().endsWith(`${getGlyphs('fancy').scrollDown} 17 more`)).toBe(true);
+    expect(lines[18]).toContain('Tree');
   });
 
   test('tree leaves the trailer row blank while the list fits', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: false });
     expect(lines.some(line => line.includes(' more'))).toBe(false);
-    expect(lines[HEIGHT - 3]).toContain('deferred');
+    expect(lines[HEIGHT - 1]).toContain('deferred');
   });
 
   test('the split detail panel draws its left border on every body row', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: true });
     const border = getGlyphs('fancy').treeVertical;
     const column = splitViewLayout(WIDTH).listWidth + 1;
-    for (const line of lines.slice(2, HEIGHT - 3)) {
+    for (const line of lines.slice(2, HEIGHT - 2)) {
       expect(line[column]).toBe(border);
     }
-    expect(lines[HEIGHT - 3]![column]).not.toBe(border);
+    expect(lines[HEIGHT - 2]![column]).not.toBe(border);
   });
 
   test('shared chrome above the view shortens the view, not the frame', async () => {
     const lines = await frameOf({ viewMode: 'tree', showSearch: true });
     expect(lines).toHaveLength(HEIGHT);
-    expect(lines[HEIGHT - 2]).toContain(FOOTER_PRIMARY_SHORTCUTS);
+    expect(lines[HEIGHT - 2]).toContain('? help');
   });
 });
 
@@ -132,8 +127,8 @@ describe('the ascii tier', () => {
 });
 
 describe('footer', () => {
-  // The narrow end: below 92 columns the tab names collapse to bare numbers, and
-  // the shortcut row is longer than the terminal is wide.
+  // The narrow end: the tab names go before the hints do, the hints leave one
+  // by one, and help is the last to go.
   for (const mode of ['narrow', 'wide'] as const) {
   for (const width of [60, 70, 91, 92, 140]) {
     test(`stays two rows at ${width} columns (ambiguous ${mode})`, async () => {
@@ -142,15 +137,28 @@ describe('footer', () => {
       setAmbiguousWidth('narrow');
       expect(lines).toHaveLength(HEIGHT);
 
-      const shortcuts = lines[HEIGHT - 2]!;
-      const tabs = lines[HEIGHT - 1]!;
-      expect(stringWidth(shortcuts)).toBeLessThanOrEqual(width);
+      const tabs = lines[HEIGHT - 2]!;
+      const legend = lines[HEIGHT - 1]!;
       expect(stringWidth(tabs)).toBeLessThanOrEqual(width);
-      expect(tabs).toStartWith(' [1]');
-      expect(tabs).toContain('q quit');
+      expect(stringWidth(legend)).toBeLessThanOrEqual(width);
+      expect(tabs).toMatch(/^ {2}1 /);
+      expect(tabs).toContain('? help');
+      expect(tabs).toContain('n on');
+      expect(legend).toContain('open');
     });
   }
   }
+
+  test('names the tabs and offers every hint when the row is wide enough', async () => {
+    const [tabs] = (await frameOf({ viewMode: 'tree' })).slice(HEIGHT - 2);
+    expect(tabs).toContain('1 Tree  2 Kanban  3 Graph  4 Stats  5 Memories');
+    for (const word of ['search', 'filter', 'details', 'cmd', 'help']) expect(tabs).toContain(word);
+  });
+
+  test('names the hidden statuses at the end of the legend row', async () => {
+    const lines = await frameOf({ viewMode: 'tree' });
+    expect(lines[HEIGHT - 1]!.trimEnd().endsWith('filter: closed hidden')).toBe(true);
+  });
 });
 
 // Every flag isModalOpen() answers to gates the navigation handlers off. If the

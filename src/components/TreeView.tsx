@@ -116,14 +116,6 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
         )}
       </Box>
 
-      <Box paddingX={1} gap={2}>
-        <Text color={theme.colors.statusOpen}>{glyphs.statusOpen} open</Text>
-        <Text color={theme.colors.statusInProgress}>{glyphs.statusInProgress} in progress</Text>
-        <Text color={theme.colors.statusBlocked}>{glyphs.statusBlocked} blocked</Text>
-        <Text color={theme.colors.statusClosed}>{glyphs.statusClosed} closed</Text>
-        <Text color={theme.colors.statusDeferred}>{glyphs.statusDeferred} deferred</Text>
-      </Box>
-
       <Footer currentView="tree" />
     </Box>
   );

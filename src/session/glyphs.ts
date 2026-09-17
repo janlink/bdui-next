@@ -52,6 +52,8 @@ export interface GlyphSet {
   middot: string;
   /** The dot before the live/stale word in the header. */
   indicator: string;
+  /** The Enter key, as the footer names it. */
+  enter: string;
 
   // Ink draws its own frames from cli-boxes, so the tier has to map those too.
   border: (style: BorderStyleName) => BorderStyleName;
@@ -89,6 +91,7 @@ const FANCY: GlyphSet = {
   bullet: '•',
   middot: '·',
   indicator: '●',
+  enter: '↵',
   border: style => style,
 };
 
@@ -124,6 +127,7 @@ const SAFE: GlyphSet = {
   bullet: '•',
   middot: '·',
   indicator: '■',
+  enter: 'Enter',
   // Rounded corners are not in CP437; single and double are.
   border: style => (style === 'round' ? 'single' : style),
 };
@@ -160,6 +164,7 @@ const ASCII: GlyphSet = {
   bullet: '*',
   middot: '.',
   indicator: '*',
+  enter: 'Enter',
   border: () => 'classic',
 };
 

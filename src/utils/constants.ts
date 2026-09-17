@@ -90,7 +90,7 @@ export type ListView = 'tree' | 'graph' | 'memories' | 'kanban' | 'stats';
 // detail panel. One table instead of an offset per call site, so a changed
 // header cannot leave a view one row short.
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
-  tree: { body: 5, panel: 5 },
+  tree: { body: 4, panel: 4 },
   graph: { body: 8, panel: 6 },
   memories: { body: 7, panel: 7 },
   kanban: { body: LAYOUT.uiOverhead, panel: 4 },
