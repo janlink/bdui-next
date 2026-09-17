@@ -125,7 +125,7 @@ test('minimum-height details show one complete line and paging control', async (
   const output = await renderText(<DetailPanel issue={data.byId.get('short-panel')!} maxHeight={10} />, 60, 10);
   expect(output).toContain('A'.repeat(47));
   expect(output).not.toContain('SECOND PAGE LINE');
-  expect(output).toContain('↓ more');
+  expect(output).toContain('↓ 1 more line');
 });
 
 // 57 inner cells hold 28 wide characters, so 40 of them wrap onto a second
@@ -140,7 +140,7 @@ test('a wide title wraps onto a second row and the description keeps its rows', 
   expect(output).toMatch(/界{28}\n[^\n]*界{12}\n[^\n]*long-title/);
   expect(output).toContain('FIRST VISIBLE ROW');
   expect(output).toContain('SECOND VISIBLE ROW');
-  expect(output).not.toContain('↓ more');
+  expect(output).not.toMatch(/↓ \d+ more line/);
 });
 
 test('a title past three rows is cut with the ellipsis on the third', async () => {
@@ -171,8 +171,8 @@ test('roomy full-width details show more than eight wrapped lines without paging
 
   const output = await renderText(<Board />, 80, 40);
   expect(output).toContain('END-10');
-  expect(output).not.toContain('↓ more');
-  expect(output).not.toContain('↑ previous');
+  expect(output).not.toMatch(/↓ \d+ more line/);
+  expect(output).not.toMatch(/↑ \d+ above/);
 });
 
 test('all detail layouts use their actual available width', async () => {
@@ -205,7 +205,7 @@ test('all detail layouts use their actual available width', async () => {
 
     const output = await renderText(<Board />, columns, 40);
     expect(output).toContain('END-14');
-    expect(output).not.toContain('↓ more');
+    expect(output).not.toMatch(/↓ \d+ more line/);
   }
 });
 
@@ -222,6 +222,7 @@ test('detail paging starts exactly one row past each visible layout boundary', a
 
   for (const layout of layouts) {
     for (const overflow of [false, true]) {
+      // One row past the page costs the hint row too, so two rows end up below.
       const rowCount = layout.pageRows + (overflow ? 1 : 0);
       const description = Array.from({ length: rowCount }, (_, index) => `BOUNDARY-${index + 1}`).join('\n');
       const data = normalizeBeads([
@@ -248,10 +249,10 @@ test('detail paging starts exactly one row past each visible layout boundary', a
       expect(output).toContain('BOUNDARY-1');
       if (overflow) {
         expect(output).not.toContain(`BOUNDARY-${rowCount}`);
-        expect(output).toContain('↓ more');
+        expect(output).toContain('↓ 2 more lines');
       } else {
         expect(output).toContain(`BOUNDARY-${layout.pageRows}`);
-        expect(output).not.toContain('↓ more');
+        expect(output).not.toMatch(/↓ \d+ more line/);
       }
     }
   }
@@ -298,7 +299,7 @@ test('tree and graph replace the list with details when too narrow', async () =>
   }
 });
 
-test('side-by-side details are a passive follower without an arrow-paging hint', async () => {
+test('side-by-side details announce their tail and offer PgUp/PgDn instead of the arrows', async () => {
   const description = Array.from({ length: 60 }, (_, index) => `LINE-${index + 1}`).join('\n');
   const data = normalizeBeads([
     { id: 'p', title: 'Parent', status: 'open', issue_type: 'epic', priority: 1, description },
@@ -317,7 +318,7 @@ test('side-by-side details are a passive follower without an arrow-paging hint',
   const output = await renderText(<Board />, 140, 30);
   expect(output).toContain('LINE-1');         // detail panel is shown...
   expect(output).toMatch(/child row/i);     // ...beside the list...
-  expect(output).not.toContain('↓ more');   // ...and the panel does not page on arrows
+  expect(output).toMatch(/↓ \d+ more lines  pgup\/pgdn/); // ...and says how to page what is cut
 });
 
 test('description stays visible before variable-height metadata', async () => {

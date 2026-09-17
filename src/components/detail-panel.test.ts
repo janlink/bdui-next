@@ -61,6 +61,22 @@ test('detail paging yields input ownership to every overlay', () => {
   }
 });
 
+test('description pages count the lines above and below them', () => {
+  const description = Array.from({ length: 12 }, (_, index) => `L${index + 1}`).join('\n');
+  const first = getDescriptionPage(description, 20, 5, 0);
+  expect(first.above).toBe(0);
+  expect(first.remaining).toBe(7);
+
+  const second = getDescriptionPage(description, 20, 5, first.nextOffset);
+  expect(second.above).toBe(5);
+  expect(second.remaining).toBe(2);
+
+  const last = getDescriptionPage(description, 20, 5, second.nextOffset);
+  expect(last.above).toBe(10);
+  expect(last.remaining).toBe(0);
+  expect(last.hasMore).toBe(false);
+});
+
 test('final description page keeps its valid page offset', () => {
   const finalPage = getDescriptionPage('first\nsecond\nthird', 20, 2, 2);
 
