@@ -66,6 +66,8 @@ export function getDescriptionPage(
     previousOffset: Math.max(0, safeOffset - pageSize),
     hasMore: endOffset < lines.length,
     hasPrevious: safeOffset > 0,
+    above: safeOffset,
+    remaining: lines.length - endOffset,
   };
 }
 
@@ -97,7 +99,7 @@ interface DetailPanelProps {
   maxHeight?: number;
   availableWidth?: number;
   // Side-by-side layouts navigate the list with the arrow keys, so the panel
-  // there is a passive follower: no arrow-driven description paging.
+  // there pages its description on PgUp/PgDn only.
   enablePaging?: boolean;
 }
 
@@ -254,16 +256,19 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
     : Math.max(1, maxHeight - fixedRows);
 
   const roomyPage = getDescriptionPage(description, inner, room, descriptionOffset);
-  const paged = enablePaging && (roomyPage.hasPrevious || roomyPage.hasMore);
+  // A description that does not fit says so on its last row, whether or not
+  // the arrow keys page it here.
+  const paged = roomyPage.hasPrevious || roomyPage.hasMore;
   const descriptionPage = paged
     ? getDescriptionPage(description, inner, Math.max(1, room - 1), descriptionOffset)
     : roomyPage;
 
+  // The arrows page only where the panel owns them; PgUp/PgDn page everywhere.
   useInput((_input, key) => {
     if (!description) return;
-    if (key.downArrow) setDescriptionOffset(descriptionPage.nextOffset);
-    if (key.upArrow) setDescriptionOffset(descriptionPage.previousOffset);
-  }, { isActive: pagingIsActive && enablePaging });
+    if ((enablePaging && key.downArrow) || key.pageDown) setDescriptionOffset(descriptionPage.nextOffset);
+    if ((enablePaging && key.upArrow) || key.pageUp) setDescriptionOffset(descriptionPage.previousOffset);
+  }, { isActive: pagingIsActive });
 
   if (!issue) {
     return (
@@ -302,10 +307,13 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
           <Text {...ink.rule}>{glyphs.treeDash.repeat(inner)}</Text>
           <Text {...ink.text}>{descriptionPage.lines.join('\n')}</Text>
           {paged && (
-            <Text {...ink.faint}>
-              {descriptionPage.hasPrevious ? `${glyphs.scrollUp} previous` : ''}
-              {descriptionPage.hasPrevious && descriptionPage.hasMore ? ' | ' : ''}
-              {descriptionPage.hasMore ? `${glyphs.scrollDown} more` : ''}
+            <Text wrap="truncate-end">
+              <Text {...ink.faint}>
+                {descriptionPage.hasPrevious ? `${glyphs.scrollUp} ${descriptionPage.above} above` : ''}
+                {descriptionPage.hasPrevious && descriptionPage.hasMore ? '  ' : ''}
+                {descriptionPage.hasMore ? `${glyphs.scrollDown} ${descriptionPage.remaining} more line${descriptionPage.remaining === 1 ? '' : 's'}` : ''}
+              </Text>
+              {enablePaging ? null : <Text {...ink.rule}>  pgup/pgdn</Text>}
             </Text>
           )}
         </Box>
