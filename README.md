@@ -118,6 +118,46 @@ Background refresh polls the `bd` CLI every 5 seconds (your own edits refresh im
 BDUI_POLL_MS=10000 bdui
 ```
 
+### Terminal Capabilities
+
+Three properties of a terminal cannot be detected reliably from inside it, so bdui
+lets you state them. Each one defaults to the most capable setting and falls back
+cleanly, so you only need these when your terminal renders something wrong.
+
+| Variable | Values | Default | What it controls |
+| --- | --- | --- | --- |
+| `BDUI_GLYPHS` | `fancy`, `safe`, `ascii` | `fancy` | Which characters bdui draws with |
+| `BDUI_COLOR` | `auto`, `256`, `16`, `none` | `auto` | How many colors bdui spends |
+| `BDUI_AMBIGUOUS` | `auto`, `narrow`, `wide` | `auto` | Width of East Asian Ambiguous characters |
+| `NO_COLOR` | any value | unset | Same as `BDUI_COLOR=none` |
+
+**Glyphs.** No escape sequence asks a terminal which characters its font covers,
+and over SSH the font is on the other machine. Print the three sets side by side
+and pick the last one that renders as single, distinct shapes:
+
+```bash
+bdui --glyph-check
+BDUI_GLYPHS=safe bdui
+```
+
+`fancy` uses the full set, `safe` restricts it to the CP437 subset that terminal
+fonts ship for compatibility, and `ascii` stays inside printable ASCII for
+terminals without UTF-8.
+
+**Color.** bdui detects the depth through chalk and honors `NO_COLOR`. At 256
+colors it paints app-owned indices that no terminal theme can recolor; at 16 it
+uses role names your terminal theme owns and inverts the selected row instead of
+painting a surface; at `none` it emits no escape sequence at all and marks the
+selection with the gutter. `BDUI_COLOR` overrides the detection in both
+directions, which `FORCE_COLOR` cannot do downward.
+
+**Ambiguous width.** Tree lines and status glyphs are East Asian Ambiguous, so
+terminals disagree about whether they take one cell or two. bdui measures it once
+at startup by printing one such character and asking for the cursor column; a
+terminal that does not answer costs 150 ms and keeps the narrow default. Set
+`BDUI_AMBIGUOUS` if your terminal answers with a position it then does not render
+to.
+
 ### Keyboard Shortcuts
 
 #### Navigation
@@ -308,7 +348,7 @@ Removes all active search and filter criteria.
 ### Minimum Requirements
 - Width: 60 columns (recommended: 125+)
 - Height: 24 rows (recommended: 30+)
-- True color support recommended but not required
+- 256-color support recommended; 16 colors and no color are supported (see Terminal Capabilities)
 
 Terminal dimensions are shown in the header (e.g., "120x30").
 
@@ -365,6 +405,10 @@ bdui-next/
 │   │   ├── parser.ts     # Public JSON normalization
 │   │   ├── watcher.ts    # Serialized polling and deduplication
 │   │   └── commands.ts   # Current create/update/close commands
+│   ├── session/          # Terminal capabilities resolved once at startup
+│   │   ├── glyphs.ts     # The three character sets and the tier switch
+│   │   ├── colors.ts     # Color depth and the chalk level it implies
+│   │   └── ambiguous.ts  # East Asian Ambiguous width probe
 │   ├── state/            # State management
 │   │   └── store.ts      # Zustand store
 │   ├── themes/           # Theme definitions
