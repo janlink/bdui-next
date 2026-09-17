@@ -76,6 +76,22 @@ describe('view chrome', () => {
     expect(lines[HEIGHT - 3]).toContain('deferred');
   });
 
+  // 20 rows leave 14 for the list: header, column heads, 14 rows, the trailer,
+  // the legend and the two footer rows.
+  test('tree counts the rows below the window in a trailer under the list', async () => {
+    const lines = await frameOf({ viewMode: 'tree', terminalHeight: 20, showDetails: false });
+    expect(lines).toHaveLength(20);
+    expect(lines[15]).toContain('bd-0013');
+    expect(lines[16]!.trimEnd().endsWith(`${getGlyphs('fancy').scrollDown} 18 more`)).toBe(true);
+    expect(lines[17]).toContain('deferred');
+  });
+
+  test('tree leaves the trailer row blank while the list fits', async () => {
+    const lines = await frameOf({ viewMode: 'tree', showDetails: false });
+    expect(lines.some(line => line.includes(' more'))).toBe(false);
+    expect(lines[HEIGHT - 3]).toContain('deferred');
+  });
+
   test('the split detail panel closes its bottom edge inside the frame', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: true });
     const bottomEdge = lines.findIndex(line => /[╰┘╝].*$/.test(line.trimEnd()));
