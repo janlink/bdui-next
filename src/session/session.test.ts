@@ -8,6 +8,8 @@ import {
   widthFromProbeColumn,
 } from './ambiguous';
 import { GLYPH_TIERS, getGlyphs, resolveGlyphTier } from './glyphs';
+import { resolveSurface, surfaceOf } from './surface';
+import { getTheme } from '../themes/themes';
 import { glyphCheckText, handleCliArgs, HELP_TEXT } from '../cli';
 
 describe('colour depth', () => {
@@ -239,5 +241,25 @@ describe('ambiguous width probe', () => {
     const { input, output, written } = fakeTerminal(false);
     expect(await probeAmbiguousWidth({ input, output })).toBe(DEFAULT_AMBIGUOUS_WIDTH);
     expect(written).toEqual([]);
+  });
+});
+
+describe('surface', () => {
+  test('is painted unless asked otherwise', () => {
+    expect(resolveSurface({})).toBe('on');
+    expect(resolveSurface({ BDUI_SURFACE: 'on' })).toBe('on');
+    expect(resolveSurface({ BDUI_SURFACE: 'auto' })).toBe('on');
+    expect(resolveSurface({ BDUI_SURFACE: 'nonsense' })).toBe('on');
+  });
+
+  test.each(['off', '0', 'false', 'no', ' OFF '])('BDUI_SURFACE=%s turns it off', value => {
+    expect(resolveSurface({ BDUI_SURFACE: value })).toBe('off');
+  });
+
+  test('paints only where the theme owns a surface colour', () => {
+    expect(surfaceOf(getTheme('default', 'ansi256'), 'on')).toBe('ansi256(234)');
+    expect(surfaceOf(getTheme('default', 'ansi256'), 'off')).toBeUndefined();
+    expect(surfaceOf(getTheme('default', 'ansi16'), 'on')).toBeUndefined();
+    expect(surfaceOf(getTheme('default', 'none'), 'on')).toBeUndefined();
   });
 });
