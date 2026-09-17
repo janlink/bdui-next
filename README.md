@@ -120,17 +120,16 @@ BDUI_POLL_MS=10000 bdui
 
 ### Terminal Capabilities
 
-Three properties of a terminal cannot be detected reliably from inside it, so bdui
-lets you state them; a fourth switch is a matter of taste. Each one defaults to
-the most capable setting and falls back cleanly, so you only need these when your
-terminal renders something wrong or you prefer a flatter look.
+Three properties of a terminal cannot be detected reliably from inside it, so
+bdui lets you state them. Each one defaults to the most capable setting and
+falls back cleanly, so you only need these when your terminal renders something
+wrong.
 
 | Variable | Values | Default | What it controls |
 | --- | --- | --- | --- |
 | `BDUI_GLYPHS` | `fancy`, `safe`, `ascii` | `fancy` | Which characters bdui draws with |
 | `BDUI_COLOR` | `auto`, `256`, `16`, `none` | `auto` | How many colors bdui spends |
 | `BDUI_AMBIGUOUS` | `auto`, `narrow`, `wide` | `auto` | Width of East Asian Ambiguous characters |
-| `BDUI_SURFACE` | `on`, `off` | `on` | Whether header, footer and detail panel sit on a painted background |
 | `NO_COLOR` | any value | unset | Same as `BDUI_COLOR=none` |
 
 **Glyphs.** No escape sequence asks a terminal which characters its font covers,
@@ -160,17 +159,13 @@ terminal that does not answer costs 150 ms and keeps the narrow default. Set
 `BDUI_AMBIGUOUS` if your terminal answers with a position it then does not render
 to.
 
-**Surface.** At 256 colors the header, the footer and the detail panel sit on a
-dark surface that sets them apart from the list. `BDUI_SURFACE=off` keeps your
-terminal background everywhere; at 16 colors and below nothing is painted either
-way.
-
 ### Keyboard Shortcuts
 
 #### Navigation
 - `↑/↓` or `k/j` - Move up/down (select issue)
 - `←/→` or `h/l` - Move left/right (change column in Kanban view)
 - `Enter` or `Space` - Toggle detail panel
+- `PgUp/PgDn` - Page a description too long for the detail panel
 
 #### Views
 - `1` - Tree view (hierarchical, default)
@@ -228,17 +223,21 @@ the same thing in the same column on every row:
 - Press ←/→ or h/l to collapse/expand a parent
 - Press Enter/Space to toggle details
 - Press `e` to edit selected issue
-- A one-row header names the workspace and the view and shows issue and root
-  counts, your position, and whether the last poll was live or went stale
-- Priority gutter, then the status glyph (a fold caret on parents), then a
-  fixed 15-cell ID column: the tree stems draw inside it and long IDs are
-  shortened from the left so the distinctive tail stays readable
+- The view sits between two rules: the header rule names the view, the
+  workspace, the issue and root counts, your position and whether the last poll
+  was live or went stale; the footer rule carries the view tabs, the hidden
+  statuses and, while the list scrolls, the rows above and below the window
+- Priority gutter, then the status glyph (a fold caret on parents), then an ID
+  column measured over the whole tree, 15 to 24 cells wide: the tree stems draw
+  inside it and longer IDs are shortened from the left so the distinctive tail
+  stays readable. The column keeps its width while you scroll
 - The title gets the remaining width; every type but `task` is named before it
 - The right-hand column says what matters in words: `3/13` closed subtasks on
   a parent, `P1 in progress`, `blocked`, `closed`, or the bare priority
-- Color is spent on status only; epics are bold, closed rows are dimmed
-- A trailer under the list counts the rows above and below the window
-- The footer carries the view tabs, the key hints and the status legend
+- Color is spent on status only; epics are bold, closed rows are dimmed down to
+  their gutter, and the selected row is marked with a lifted background
+- Below the footer rule a second row holds the key hints, and from 120 columns
+  on the status legend beside them
 
 ### Dependency Graph
 Visualizes issue dependencies:
@@ -367,7 +366,11 @@ The Kanban board fills the width with as many 24-cell columns as fit:
 With the detail panel open, a terminal of 90 columns or more shows the panel
 in a 40-cell pane beside the board; below that the panel replaces the board.
 The Tree and Graph views split at 107 columns, where the list keeps at least
-70 cells and the panel grows from 36 to 40.
+70 cells and the panel grows from 36 to 40. Beside the list the panel hangs in
+the frame the view already draws: the rules fork at its border, name the issue
+above it and its keys below it, and the panel drops its own border. A
+description too long for it says how many lines are cut and pages on
+`PgUp`/`PgDn`.
 
 ### Minimum Requirements
 - Width: 60 columns (recommended: 125+)
@@ -418,8 +421,9 @@ bdui-next/
 │   │   ├── Board.tsx     # View router and five-column Kanban board
 │   │   ├── TreeView.tsx  # Hierarchical tree view
 │   │   ├── IssueRow.tsx  # One tree row on the shared column grid
-│   │   ├── Header.tsx    # Workspace, view, counts and live state
-│   │   ├── Footer.tsx    # View tabs, key hints and status legend
+│   │   ├── Header.tsx    # The rule above a view, forked at the panel
+│   │   ├── Footer.tsx    # The rule below it, plus the key hint row
+│   │   ├── Rule.tsx      # A horizontal rule with words set into it
 │   │   ├── DetailPanel.tsx
 │   │   ├── DependencyGraph.tsx
 │   │   ├── StatsView.tsx
@@ -436,8 +440,7 @@ bdui-next/
 │   ├── session/          # Terminal capabilities resolved once at startup
 │   │   ├── glyphs.ts     # The three character sets and the tier switch
 │   │   ├── colors.ts     # Color depth and the chalk level it implies
-│   │   ├── ambiguous.ts  # East Asian Ambiguous width probe
-│   │   └── surface.ts    # Painted chrome surface switch
+│   │   └── ambiguous.ts  # East Asian Ambiguous width probe
 │   ├── state/            # State management
 │   │   └── store.ts      # Zustand store
 │   ├── themes/           # Theme definitions

@@ -11,29 +11,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session axes for what a terminal cannot tell us: `BDUI_GLYPHS` picks the
   character set (`fancy`, `safe`, `ascii`; `--glyph-check` prints them side by
   side), `BDUI_COLOR` the colour depth (`auto`, `256`, `16`, `none`, honouring
-  `NO_COLOR`), `BDUI_AMBIGUOUS` the East Asian Ambiguous width (probed once at
-  startup), and `BDUI_SURFACE` whether header, footer and detail panel sit on a
-  painted background.
-- A one-row tree header naming the workspace and the view, with issue and root
-  counts, the cursor position, and a live/stale indicator for the last poll.
-- A trailer under the tree list counting the rows above and below the window.
+  `NO_COLOR`), and `BDUI_AMBIGUOUS` the East Asian Ambiguous width (probed once
+  at startup).
+- A header rule above each view naming the view and the workspace, with issue
+  and root counts, the cursor position, and a live/stale indicator for the last
+  poll.
+- A description too long for the detail panel says how many lines are cut and
+  pages on `PgUp`/`PgDn`, beside the list as well as over it.
 
 ### Changed
 - The tree view is redrawn as a quiet hierarchy: a priority gutter, the status
-  glyph (a fold caret on parents), a fixed 15-cell ID column that carries the
-  tree stems and shortens long IDs from the left, the type word for every type
-  but `task`, the title in the remaining width, and a right-hand column that
-  says `closed/total`, `P1 in progress`, `blocked`, `closed` or the priority in
-  words. Colour is spent on status only; epics are bold and closed rows dimmed.
-- The detail panel is a borderless surface with a key/value grid, a progress
-  bar for parents, the subtasks with their status, ISO timestamps, and the
-  description paged underneath; the side pane is 40 cells wide in Tree, Graph
-  and Kanban.
-- The footer shows the view tabs with the active one as an inverted chip, the
-  key hints for search, filter, details, the command bar and help, the
-  notification state as `n on`/`n off`, and the status legend with the hidden
-  statuses named on the right. The `q quit` and `v show` hints left the footer;
-  both keys still work and the help overlay lists them.
+  glyph (a fold caret on parents), an ID column measured over the whole tree
+  between 15 and 24 cells that carries the tree stems and shortens long IDs
+  from the left, the type word for every type but `task`, the title in the
+  remaining width, and a right-hand column that says `closed/total`,
+  `P1 in progress`, `blocked`, `closed` or the priority in words. Colour is
+  spent on status only; epics are bold, closed rows are dimmed down to their
+  gutter, and the selection is marked with a lifted background.
+- The chrome is drawn as open rules rather than boxes on a painted background,
+  and the header and footer rules carry their words. Beside the list the rules
+  fork at the panel border, name the issue above the panel and its keys below
+  it, so the panel drops its own border, id row and key row and the tree gains
+  the row its trailer used to spend.
+- The detail panel is a borderless key/value grid with a progress bar for
+  parents, the subtasks with their status, ISO timestamps, and the description
+  paged underneath; the side pane is 40 cells wide in Tree, Graph and Kanban.
+- The footer rule carries the view tabs with the active one in the accent
+  colour, the hidden statuses, and the rows above and below the scrolled
+  window. Under it a second row holds the key hints for search, filter,
+  details, the command bar and help, the notification state as `n on`/`n off`,
+  and, from 120 columns on, the status legend. The `q quit` and `v show` hints
+  left the footer; both keys still work and the help overlay lists them.
 - Themes are defined per colour depth: at 256 colours bdui paints app-owned
   indices, at 16 it uses the terminal's role colours and inverts the selection,
   at `none` it emits no escape sequences and marks the selection in the gutter.
