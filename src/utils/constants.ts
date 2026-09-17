@@ -4,7 +4,7 @@ import { getTheme, type Theme } from '../themes/themes';
 // Layout constants
 export const LAYOUT = {
   columnWidth: 37,
-  detailPanelWidth: 55,
+  detailPanelWidth: 40,
   uiOverhead: 14,
   issueCardHeight: 8,
   titleMaxLength: 32,
@@ -14,12 +14,12 @@ export const LAYOUT = {
   // Below splitViewMinWidth the Tree/Graph detail panel replaces the list; at or
   // above it, list and panel sit side by side and each keeps at least its min.
   splitViewMinListWidth: 70,
-  splitViewMinPanelWidth: 50,
-  splitViewMinWidth: 122, // splitViewMinListWidth + splitViewMinPanelWidth + gap
+  splitViewMinPanelWidth: 36,
+  splitViewMinWidth: 107, // splitViewMinListWidth + splitViewMinPanelWidth + gap
 } as const;
 
 // Space between the list and the detail panel; mirrors the panel Box marginLeft.
-const SPLIT_VIEW_GAP = 2;
+const SPLIT_VIEW_GAP = 1;
 
 // Row-oriented views (Tree, Graph) show the detail panel beside the list when the
 // terminal is wide enough for both, otherwise it replaces the list (like Kanban).

@@ -4,6 +4,7 @@ import { normalizeBeads } from '../bd/parser';
 import { getGlyphs } from '../session/glyphs';
 import { isModalOpen, useBeadsStore } from '../state/store';
 import { getTheme } from '../themes/themes';
+import { splitViewLayout } from '../utils/constants';
 import { FOOTER_PRIMARY_SHORTCUTS } from './Footer';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { pressKeys, renderLines } from '../test-utils/ink-render';
@@ -92,11 +93,14 @@ describe('view chrome', () => {
     expect(lines[HEIGHT - 3]).toContain('deferred');
   });
 
-  test('the split detail panel closes its bottom edge inside the frame', async () => {
+  test('the split detail panel draws its left border on every body row', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: true });
-    const bottomEdge = lines.findIndex(line => /[╰┘╝].*$/.test(line.trimEnd()));
-    expect(bottomEdge).toBeGreaterThan(0);
-    expect(bottomEdge).toBeLessThan(HEIGHT - 2);
+    const border = getGlyphs('fancy').treeVertical;
+    const column = splitViewLayout(WIDTH).listWidth + 1;
+    for (const line of lines.slice(2, HEIGHT - 3)) {
+      expect(line[column]).toBe(border);
+    }
+    expect(lines[HEIGHT - 3]![column]).not.toBe(border);
   });
 
   test('shared chrome above the view shortens the view, not the frame', async () => {
