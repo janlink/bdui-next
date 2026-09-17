@@ -22,6 +22,15 @@ const data = normalizeBeads([
     priority: 2,
   })),
   {
+    id: 'bd-9000',
+    title: 'A title far longer than any column, panel or card can hold '.repeat(4),
+    status: 'open',
+    issue_type: 'feature',
+    priority: 0,
+    assignee: 'a-name-longer-than-the-card-is-wide',
+    labels: ['first-label', 'second-label', 'third-label', 'fourth-label'],
+  },
+  {
     id: 'bd-9001',
     title: 'Blocked by the first issue',
     status: 'open',
@@ -78,6 +87,27 @@ describe('view chrome', () => {
     const lines = await frameOf({ viewMode: 'tree', showSearch: true });
     expect(lines).toHaveLength(HEIGHT);
     expect(lines[HEIGHT - 2]).toContain(FOOTER_PRIMARY_SHORTCUTS);
+  });
+});
+
+// The tier promises the terminal it will draw with nothing but ASCII, so one
+// character Ink or a view brought along of its own defeats the whole tier.
+describe('the ascii tier', () => {
+  for (const viewMode of VIEWS) {
+    test.each([70, 140])(`draws ${viewMode} in ASCII alone at %i columns`, async width => {
+      const lines = await frameOf(
+        { viewMode, glyphs: getGlyphs('ascii'), theme: getTheme('default', 'none') },
+        width,
+      );
+      for (const line of lines) {
+        expect(line).toMatch(/^[\x20-\x7E]*$/);
+      }
+    });
+  }
+
+  test.each(['tree', 'kanban'] as const)('cuts an over-long title in %s with its own ellipsis', async viewMode => {
+    const lines = await frameOf({ viewMode, glyphs: getGlyphs('ascii'), theme: getTheme('default', 'none') });
+    expect(lines.some(line => line.includes(getGlyphs('ascii').ellipsis))).toBe(true);
   });
 });
 
