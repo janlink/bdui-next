@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import stringWidth from 'string-width';
+import stringWidth, { getAmbiguousWidth, setAmbiguousWidth } from 'string-width';
 
 const ESC = String.fromCharCode(27);
 
@@ -13,19 +13,41 @@ describe('string-width override', () => {
       ['▸', 1],
       ['└─', 2],
       ['│  ', 3],
-      ['○◐●✓❄◇', 6],
-      ['⚑↑↓…', 4],
+      ['○◐●✓◊∙', 6],
+      ['▋█▒', 3],
+      ['↑↓…', 3],
       ['日本語', 6],
       ['한국어', 6],
       ['👍', 2],
       ['👨‍👩‍👧‍👦', 2],
       ['🇩🇪', 2],
-      ['  │  ▾ ○ bd-0042  ● P2 [epic] Titel', 35],
+      ['▋○ │  ▾ bd-0042             epic Titel', 38],
     ];
 
     for (const [value, expected] of cases) {
       expect(stringWidth(value)).toBe(expected);
     }
+  });
+
+  test('measures East Asian Ambiguous characters as the session decided', () => {
+    try {
+      expect(getAmbiguousWidth()).toBe('narrow');
+      expect(stringWidth('│─○')).toBe(3);
+
+      setAmbiguousWidth('wide');
+      expect(getAmbiguousWidth()).toBe('wide');
+      expect(stringWidth('│─○')).toBe(6);
+      // Neutral characters are unaffected, which is why a width-measured column
+      // has to pad to the widest of the characters that share it.
+      expect(stringWidth('✓◊∙')).toBe(3);
+    } finally {
+      setAmbiguousWidth('narrow');
+    }
+  });
+
+  test('takes an explicit ambiguous width over the session default', () => {
+    expect(stringWidth('│', { ambiguousIsNarrow: false })).toBe(2);
+    expect(stringWidth('│', { ambiguousIsNarrow: true })).toBe(1);
   });
 
   test('ignores ANSI escape sequences by default and counts them on request', () => {
