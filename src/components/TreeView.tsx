@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
 import { buildVisibleTree, flattenTree } from '../utils/tree';
 import { useTreeNavigation } from './useTreeNavigation';
-import { ListRow } from './IssueRow';
+import { ListHeader, ListRow } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
 import { Footer } from './Footer';
 import { listBudget, splitViewLayout } from '../utils/constants';
@@ -53,18 +53,19 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
     <Box flexDirection="column" width="100%" height={terminalHeight}>
       <Box justifyContent="space-between">
         <Text {...theme.ink.strong}>Tree</Text>
-        <Box gap={1}>
-          <Text {...theme.ink.faint}>{scrollOffset > 0 ? `${glyphs.scrollUp}${scrollOffset}` : ''}</Text>
-          <Text {...theme.ink.faint}>{below > 0 ? `${glyphs.scrollDown}${below}` : ''}</Text>
+        <Box gap={2}>
+          <Text {...theme.ink.faint}>Total: <Text {...theme.ink.dim}>{data.stats.total}</Text></Text>
+          <Text {...theme.ink.faint}>Roots: <Text {...theme.ink.dim}>{tree.length}</Text></Text>
+          <Text {...theme.ink.dim}>
+            {flatNodes.length === 0 ? 0 : selectedIndex + 1}/{flatNodes.length}
+          </Text>
+          <Text {...theme.ink.faint}>
+            {scrollOffset > 0 ? `${glyphs.scrollUp}${scrollOffset} ` : ''}
+            {below > 0 ? `${glyphs.scrollDown}${below}` : ''}
+          </Text>
         </Box>
       </Box>
-      <Box gap={2}>
-        <Text {...theme.ink.faint}>Total: <Text {...theme.ink.dim}>{data.stats.total}</Text></Text>
-        <Text {...theme.ink.faint}>Roots: <Text {...theme.ink.dim}>{tree.length}</Text></Text>
-        <Text {...theme.ink.faint}>
-          Selected: <Text {...theme.ink.dim}>{flatNodes.length === 0 ? 0 : selectedIndex + 1}/{flatNodes.length}</Text>
-        </Text>
-      </Box>
+      <ListHeader theme={theme} glyphs={glyphs} width={listWidth} />
 
       <Box flexGrow={1} overflow="hidden">
         {flatNodes.length === 0 ? (

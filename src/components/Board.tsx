@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
 import { StatusColumn } from './StatusColumn';
@@ -174,6 +174,7 @@ export function Board() {
   const toggleExportDialog = useBeadsStore(state => state.toggleExportDialog);
   const toggleThemeSelector = useBeadsStore(state => state.toggleThemeSelector);
   const theme = useBeadsStore(state => state.theme);
+  const setChromeHeight = useBeadsStore(state => state.setChromeHeight);
 
   const selectedIssue = getSelectedIssue();
 
@@ -191,6 +192,7 @@ export function Board() {
     + (showFilter ? CHROME_HEIGHT.filterPanel : 0)
     + (showJumpToPage ? CHROME_HEIGHT.commandBar : 0);
   const viewHeight = Math.max(LAYOUT.issueCardHeight, terminalHeight - chromeHeight);
+  useEffect(() => setChromeHeight(chromeHeight), [chromeHeight, setChromeHeight]);
 
   // Check minimum terminal width
   if (terminalWidth < LAYOUT.minTerminalWidth) {

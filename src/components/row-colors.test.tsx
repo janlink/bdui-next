@@ -22,9 +22,7 @@ afterEach(() => {
   chalk.level = detectedLevel;
 });
 
-// chalk froze its own detection at import and Ink writes through the same
-// instance, so the depth under test is set here rather than inferred from the
-// faked stdout the renderer gets.
+// The renderer's faked stdout carries no colour depth, so each test sets one.
 async function renderAt(depth: ColorDepth, isSelected: boolean): Promise<string> {
   chalk.level = chalkLevelFor(depth);
   const frame = await renderFrame(
@@ -66,6 +64,14 @@ describe('16 colours', () => {
     expect(line).not.toContain('48;5;');
   });
 
+  // Inverse is per span, so any hue left on a selected row would break the one
+  // surface into as many colours as the row has spans.
+  test('drops every hue from the selected row and keeps them on the others', async () => {
+    const hue = /\[(3[0-7]|9[0-7])m/g;
+    expect((await renderAt('ansi16', true)).match(hue)).toBeNull();
+    expect((await renderAt('ansi16', false)).match(hue)).not.toBeNull();
+  });
+
   test('never emits a 256-colour code', async () => {
     for (const selected of [false, true]) {
       expect(await renderAt('ansi16', selected)).not.toContain('38;5;');
@@ -81,7 +87,7 @@ describe('no colour', () => {
   });
 
   test('marks the selection with the gutter, since no colour is left', async () => {
-    expect(await renderAt('none', true)).toStartWith('▋');
+    expect(await renderAt('none', true)).toStartWith('▌');
     expect(await renderAt('none', false)).toStartWith(' ');
   });
 });

@@ -2,8 +2,9 @@ import React from 'react';
 import { Text } from 'ink';
 import stringWidth from 'string-width';
 import { getTypeColor, getStatusColor, getPriorityColor, rowLayout } from '../utils/constants';
+import { fitFromRight, fitToWidth, keepLastCells, padEndCells, padStartCells } from '../utils/cells';
 import type { GlyphSet } from '../session/glyphs';
-import type { Theme } from '../themes/themes';
+import type { Theme, TextStyle } from '../themes/themes';
 import type { FlatNode } from '../utils/tree';
 import type { Issue } from '../types';
 
@@ -40,55 +41,6 @@ export function statusWord(issue: Issue): string {
   return issue.status.replace('_', ' ');
 }
 
-// Every fit and pad below counts display cells, not code units, so a wide
-// character cannot push a row past the terminal edge.
-function fitToWidth(text: string, width: number, ellipsis: string): string {
-  if (width <= 0) return '';
-  if (stringWidth(text) <= width) return text;
-
-  const room = width - stringWidth(ellipsis);
-  let fitted = '';
-  let used = 0;
-  for (const character of text) {
-    const characterWidth = stringWidth(character);
-    if (used + characterWidth > room) break;
-    fitted += character;
-    used += characterWidth;
-  }
-  return `${fitted}${ellipsis}`;
-}
-
-// An id's tail is what distinguishes siblings, its head is what says which tree
-// it belongs to. Truncating cannot keep both, and in an indented list the tail
-// is the part the eye needs.
-function fitIdFromLeft(id: string, width: number, ellipsis: string): string {
-  if (width <= 0) return '';
-  if (stringWidth(id) <= width) return id;
-
-  const room = width - stringWidth(ellipsis);
-  let fitted = '';
-  let used = 0;
-  for (const character of [...id].reverse()) {
-    const characterWidth = stringWidth(character);
-    if (used + characterWidth > room) break;
-    fitted = character + fitted;
-    used += characterWidth;
-  }
-  return `${ellipsis}${fitted}`;
-}
-
-function padEndCells(text: string, width: number): string {
-  return text + ' '.repeat(Math.max(0, width - stringWidth(text)));
-}
-
-function padStartCells(text: string, width: number): string {
-  return ' '.repeat(Math.max(0, width - stringWidth(text))) + text;
-}
-
-function padGlyph(glyph: string, width: number): string {
-  return glyph + ' '.repeat(Math.max(0, width - stringWidth(glyph)));
-}
-
 function branchOf(node: FlatNode, glyphs: GlyphSet): string {
   const stem = node.prefix.replaceAll('│', glyphs.treeVertical);
   if (node.depth === 0) return stem;
@@ -113,7 +65,9 @@ function progressBar(issue: Issue, glyphs: GlyphSet): Bar | null {
   if (!progress || progress.total === 0) return null;
   // A started epic keeps at least one filled segment, so "some" never rounds
   // down to the same picture as "none".
-  const filled = Math.max(1, Math.round((progress.closed / progress.total) * PROGRESS_SEGMENTS));
+  const filled = progress.closed === 0
+    ? 0
+    : Math.max(1, Math.round((progress.closed / progress.total) * PROGRESS_SEGMENTS));
   return {
     done: glyphs.barDone.repeat(filled),
     rest: glyphs.barEmpty.repeat(PROGRESS_SEGMENTS - filled),
@@ -127,10 +81,17 @@ function ListRowImpl({ node, isSelected, theme, glyphs, width }: RowProps) {
   // With no colour left to spend, the gutter is the only channel the selection
   // can still use.
   const gutterVisible = theme.depth !== 'none' || isSelected;
+  // Inverse swaps foreground and background per span, so a selected row that
+  // kept its hues would paint its one surface in as many colours as it has
+  // spans. It gives them up instead and keeps the attributes.
+  const flat = isSelected && theme.depth === 'ansi16';
+  const hue = (color: string): string | undefined => (flat ? undefined : color);
+  const rung = (style: TextStyle): TextStyle | { bold?: boolean; dimColor?: boolean } =>
+    (flat ? { bold: style.bold, dimColor: style.dimColor } : style);
 
-  const lead = `${branchOf(node, glyphs)}${caretOf(node, glyphs)}`;
-  const idRoom = Math.max(0, grid.id - stringWidth(lead) - 1);
-  const id = padEndCells(fitIdFromLeft(issue.id, idRoom, glyphs.ellipsis), idRoom + 1);
+  const lead = keepLastCells(`${branchOf(node, glyphs)}${caretOf(node, glyphs)}`, grid.id - 1);
+  const idRoom = grid.id - stringWidth(lead) - 1;
+  const id = padEndCells(fitFromRight(issue.id, idRoom, glyphs.ellipsis), idRoom + 1);
 
   const typeText = issue.issue_type && issue.issue_type !== 'task' ? `${issue.issue_type} ` : '';
   const titleWidth = Math.max(0, grid.title - stringWidth(typeText));
@@ -145,26 +106,46 @@ function ListRowImpl({ node, isSelected, theme, glyphs, width }: RowProps) {
 
   return (
     <Text {...(isSelected ? theme.selection : NO_SELECTION)} wrap="truncate-end">
-      <Text color={getPriorityColor(issue.priority, theme)}>
-        {padGlyph(gutterVisible ? glyphs.gutter : ' ', grid.gutter)}
+      <Text color={hue(getPriorityColor(issue.priority, theme))}>
+        {padEndCells(gutterVisible ? glyphs.gutter : ' ', grid.gutter)}
       </Text>
-      <Text color={statusColor}>{padGlyph(statusGlyph(issue, glyphs), grid.status)}</Text>
+      <Text color={hue(statusColor)}>{padEndCells(statusGlyph(issue, glyphs), grid.status)}</Text>
       <Text>{' '.repeat(grid.gap)}</Text>
-      <Text {...ink.rule}>{lead}</Text>
-      <Text {...ink.dim}>{id}</Text>
-      {typeText ? <Text color={getTypeColor(issue.issue_type, theme)}>{typeText}</Text> : null}
-      <Text {...titleStyle}>{title}</Text>
+      <Text {...rung(ink.rule)}>{lead}</Text>
+      <Text {...rung(ink.dim)}>{id}</Text>
+      {typeText ? <Text color={hue(getTypeColor(issue.issue_type, theme))}>{typeText}</Text> : null}
+      <Text {...rung(titleStyle)}>{title}</Text>
       {bar ? (
         <Text>
           {' '.repeat(Math.max(0, grid.meta - stringWidth(bar.done + bar.rest)))}
-          <Text color={statusColor}>{bar.done}</Text>
-          <Text {...ink.rule}>{bar.rest}</Text>
+          <Text color={hue(statusColor)}>{bar.done}</Text>
+          <Text {...rung(ink.rule)}>{bar.rest}</Text>
         </Text>
       ) : (
-        <Text {...ink.faint}>
+        <Text {...rung(ink.faint)}>
           {padStartCells(fitToWidth(statusWord(issue), grid.meta, glyphs.ellipsis), grid.meta)}
         </Text>
       )}
+    </Text>
+  );
+}
+
+interface HeaderProps {
+  theme: Theme;
+  glyphs: GlyphSet;
+  width: number;
+}
+
+// The header reads the same grid the row does; deriving its edges separately is
+// what put it one cell beside the titles before.
+export function ListHeader({ theme, glyphs, width }: HeaderProps) {
+  const grid = rowLayout(width, glyphs);
+  return (
+    <Text {...theme.ink.faint} wrap="truncate-end">
+      {' '.repeat(grid.gutter + grid.status + grid.gap)}
+      {padEndCells('ID', grid.id)}
+      {padEndCells('TITLE', grid.title)}
+      {padStartCells('STATUS', grid.meta)}
     </Text>
   );
 }

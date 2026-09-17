@@ -214,3 +214,42 @@ test('global ID selection clears filters so the selected issue remains visible',
   expect(selected.filter).toEqual({});
   expect(selected.getSelectedIssue()?.id).toBe('issue-third');
 });
+
+// Cards are whole rows of chrome, so the page size follows the height the board
+// was given rather than the terminal's.
+test('the board pages in whole cards against the height it was given', () => {
+  const store = useBeadsStore.getState();
+  store.setChromeHeight(0);
+
+  store.setTerminalSize(140, 45);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(3);
+
+  store.setTerminalSize(140, 61);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(5);
+});
+
+test('chrome above the board costs it a page of cards', () => {
+  const store = useBeadsStore.getState();
+  store.setChromeHeight(0);
+  store.setTerminalSize(140, 61);
+
+  store.setChromeHeight(16);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(3);
+});
+
+test('a resized page keeps the selected card on screen', () => {
+  const store = useBeadsStore.getState();
+  store.setChromeHeight(0);
+  store.setTerminalSize(140, 61);
+  useBeadsStore.setState({
+    columnStates: {
+      ...useBeadsStore.getState().columnStates,
+      open: { selectedIndex: 7, scrollOffset: 5 },
+    },
+  });
+
+  store.setChromeHeight(16);
+  const open = useBeadsStore.getState().columnStates.open;
+  expect(open.selectedIndex).toBe(7);
+  expect(open.scrollOffset).toBe(6);
+});
