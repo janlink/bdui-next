@@ -121,14 +121,16 @@ BDUI_POLL_MS=10000 bdui
 ### Terminal Capabilities
 
 Three properties of a terminal cannot be detected reliably from inside it, so bdui
-lets you state them. Each one defaults to the most capable setting and falls back
-cleanly, so you only need these when your terminal renders something wrong.
+lets you state them; a fourth switch is a matter of taste. Each one defaults to
+the most capable setting and falls back cleanly, so you only need these when your
+terminal renders something wrong or you prefer a flatter look.
 
 | Variable | Values | Default | What it controls |
 | --- | --- | --- | --- |
 | `BDUI_GLYPHS` | `fancy`, `safe`, `ascii` | `fancy` | Which characters bdui draws with |
 | `BDUI_COLOR` | `auto`, `256`, `16`, `none` | `auto` | How many colors bdui spends |
 | `BDUI_AMBIGUOUS` | `auto`, `narrow`, `wide` | `auto` | Width of East Asian Ambiguous characters |
+| `BDUI_SURFACE` | `on`, `off` | `on` | Whether header, footer and detail panel sit on a painted background |
 | `NO_COLOR` | any value | unset | Same as `BDUI_COLOR=none` |
 
 **Glyphs.** No escape sequence asks a terminal which characters its font covers,
@@ -158,6 +160,11 @@ terminal that does not answer costs 150 ms and keeps the narrow default. Set
 `BDUI_AMBIGUOUS` if your terminal answers with a position it then does not render
 to.
 
+**Surface.** At 256 colors the header, the footer and the detail panel sit on a
+dark surface that sets them apart from the list. `BDUI_SURFACE=off` keeps your
+terminal background everywhere; at 16 colors and below nothing is painted either
+way.
+
 ### Keyboard Shortcuts
 
 #### Navigation
@@ -181,6 +188,7 @@ to.
 #### Search & Filter
 - `/` - Open search (searches title, description, ID)
 - `f` - Open filter panel (filter by assignee, tags, priority, status)
+- `v` - Choose which statuses are shown
 - `c` - Clear all filters and search
 - `ESC` - Close search/filter/form panels
 
@@ -214,13 +222,23 @@ Features:
 - Responsive layout (adapts to terminal size)
 
 ### Tree View (Default)
-Shows hierarchical parent-child relationships:
+Shows hierarchical parent-child relationships on a fixed grid, so the eye finds
+the same thing in the same column on every row:
 - Navigate with ↑/↓ or k/j
 - Press ←/→ or h/l to collapse/expand a parent
 - Press Enter/Space to toggle details
 - Press `e` to edit selected issue
-- Visual tree structure with connection lines
-- Per-issue metadata up front, depth-aware indentation
+- A one-row header names the workspace and the view and shows issue and root
+  counts, your position, and whether the last poll was live or went stale
+- Priority gutter, then the status glyph (a fold caret on parents), then a
+  fixed 15-cell ID column: the tree stems draw inside it and long IDs are
+  shortened from the left so the distinctive tail stays readable
+- The title gets the remaining width; every type but `task` is named before it
+- The right-hand column says what matters in words: `3/13` closed subtasks on
+  a parent, `P1 in progress`, `blocked`, `closed`, or the bare priority
+- Color is spent on status only; epics are bold, closed rows are dimmed
+- A trailer under the list counts the rows above and below the window
+- The footer carries the view tabs, the key hints and the status legend
 
 ### Dependency Graph
 Visualizes issue dependencies:
@@ -264,7 +282,7 @@ Platform support:
 - **Linux** - Freedesktop.org notification spec
 - **Windows** - Toast notifications
 
-Toggle notifications with the `n` key. Current state is shown in the footer (🔔 ON / 🔕 OFF).
+Toggle notifications with the `n` key. The footer shows the current state as `n on` or `n off`.
 
 ### Testing Notifications
 ```bash
@@ -340,17 +358,23 @@ Removes all active search and filter criteria.
 ## 📊 Responsive Layout
 
 ### Terminal Size Adaptation
-- **Extra wide (250+ cols)**: All five columns plus the detail panel
-- **Wide (195-249 cols)**: All five columns
-- **Medium (74-194 cols)**: Two columns; the window follows the active column
-- **Narrow (60-73 cols)**: One active column
+The Kanban board fills the width with as many 24-cell columns as fit:
+- **120+ cols**: All five columns
+- **96-119 cols**: Four columns; the window follows the active column
+- **72-95 cols**: Three columns
+- **60-71 cols**: Two columns
+
+With the detail panel open, a terminal of 90 columns or more shows the panel
+in a 40-cell pane beside the board; below that the panel replaces the board.
+The Tree and Graph views split at 107 columns, where the list keeps at least
+70 cells and the panel grows from 36 to 40.
 
 ### Minimum Requirements
 - Width: 60 columns (recommended: 125+)
 - Height: 24 rows (recommended: 30+)
 - 256-color support recommended; 16 colors and no color are supported (see Terminal Capabilities)
 
-Terminal dimensions are shown in the header (e.g., "120x30").
+The Kanban header shows the terminal dimensions (e.g., "120x30").
 
 ## 🧪 Testing
 
@@ -393,6 +417,10 @@ bdui-next/
 │   │   ├── App.tsx       # Main app with keyboard handling
 │   │   ├── Board.tsx     # View router and five-column Kanban board
 │   │   ├── TreeView.tsx  # Hierarchical tree view
+│   │   ├── IssueRow.tsx  # One tree row on the shared column grid
+│   │   ├── Header.tsx    # Workspace, view, counts and live state
+│   │   ├── Footer.tsx    # View tabs, key hints and status legend
+│   │   ├── DetailPanel.tsx
 │   │   ├── DependencyGraph.tsx
 │   │   ├── StatsView.tsx
 │   │   ├── CreateIssueForm.tsx
@@ -408,7 +436,8 @@ bdui-next/
 │   ├── session/          # Terminal capabilities resolved once at startup
 │   │   ├── glyphs.ts     # The three character sets and the tier switch
 │   │   ├── colors.ts     # Color depth and the chalk level it implies
-│   │   └── ambiguous.ts  # East Asian Ambiguous width probe
+│   │   ├── ambiguous.ts  # East Asian Ambiguous width probe
+│   │   └── surface.ts    # Painted chrome surface switch
 │   ├── state/            # State management
 │   │   └── store.ts      # Zustand store
 │   ├── themes/           # Theme definitions

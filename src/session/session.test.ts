@@ -140,7 +140,7 @@ describe('informational flags', () => {
   });
 
   test('--help documents the session switches', () => {
-    for (const name of ['BDUI_GLYPHS', 'BDUI_COLOR', 'BDUI_AMBIGUOUS', 'NO_COLOR']) {
+    for (const name of ['BDUI_GLYPHS', 'BDUI_COLOR', 'BDUI_AMBIGUOUS', 'BDUI_SURFACE', 'NO_COLOR']) {
       expect(HELP_TEXT).toContain(name);
     }
   });

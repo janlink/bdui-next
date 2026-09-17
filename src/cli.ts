@@ -16,6 +16,7 @@ Environment:
   BDUI_GLYPHS     fancy | safe | ascii     which characters to draw with
   BDUI_COLOR      auto | 256 | 16 | none   how many colours to spend
   BDUI_AMBIGUOUS  auto | narrow | wide     width of East Asian Ambiguous characters
+  BDUI_SURFACE    on | off                 paint header, footer and detail panel on a surface
   NO_COLOR        set to any value         same as BDUI_COLOR=none`;
 
 const SAMPLE_SLOTS: (keyof GlyphSet)[] = [
@@ -23,7 +24,7 @@ const SAMPLE_SLOTS: (keyof GlyphSet)[] = [
   'statusOther', 'gutter', 'barDone', 'barEmpty', 'caretCollapsed', 'caretExpanded',
   'treeBranch', 'treeLast', 'treeVertical', 'treeDash', 'ellipsis', 'scrollUp',
   'scrollDown', 'checkboxOn', 'checkboxOff', 'selectArrow', 'prompt', 'graphBlocked',
-  'graphEdge', 'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot',
+  'graphEdge', 'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot', 'indicator',
 ];
 
 /**
