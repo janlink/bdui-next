@@ -5,7 +5,7 @@ import { getTheme, type Theme } from '../themes/themes';
 export const LAYOUT = {
   columnWidth: 37,
   detailPanelWidth: 55,
-  uiOverhead: 17,
+  uiOverhead: 14,
   issueCardHeight: 8,
   titleMaxLength: 32,
   descriptionMaxLength: 200,

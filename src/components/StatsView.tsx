@@ -146,11 +146,11 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
           {remainder > 0 && <Text {...theme.ink.rule}>{glyphs.barEmpty.repeat(remainder)}</Text>}
         </Box>
         <Box gap={3}>
-          <Box gap={1}><Text color={theme.colors.statusOpen}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.open} open</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusInProgress}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.in_progress} in progress</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusOpen}>{glyphs.statusOpen}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.open} open</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusInProgress}>{glyphs.statusInProgress}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.in_progress} in progress</Text></Box>
           <Box gap={1}><Text color={theme.colors.statusBlocked}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.blocked} blocked</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusClosed}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.closed} closed</Text></Box>
-          <Box gap={1}><Text color={theme.colors.statusOther}>{glyphs.statusBlocked}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.other} other</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusClosed}>{glyphs.statusClosed}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.closed} closed</Text></Box>
+          <Box gap={1}><Text color={theme.colors.statusOther}>{glyphs.statusOther}</Text><Text color={theme.colors.textDim}>{stats.statusCounts.other} other</Text></Box>
         </Box>
       </Box>
 

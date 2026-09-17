@@ -3,7 +3,7 @@ import React from 'react';
 import { Box } from 'ink';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { normalizeBeads } from '../bd/parser';
-import { getGlyphs } from '../session/glyphs';
+import { GLYPH_TIERS, getGlyphs } from '../session/glyphs';
 import { getTheme } from '../themes/themes';
 import { rowLayout } from '../utils/constants';
 import { buildVisibleTree, flattenTree } from '../utils/tree';
@@ -31,7 +31,7 @@ const AMBIGUOUS_MODES = ['narrow', 'wide'] as const;
 
 afterAll(() => setAmbiguousWidth('narrow'));
 
-function rows(selectedIndex: number, width: number) {
+function rows(selectedIndex: number, width: number, tierGlyphs = glyphs) {
   return (
     <Box flexDirection="column" width={width}>
       {nodes.map((node, index) => (
@@ -40,7 +40,7 @@ function rows(selectedIndex: number, width: number) {
           node={node}
           isSelected={index === selectedIndex}
           theme={theme}
-          glyphs={glyphs}
+          glyphs={tierGlyphs}
           width={width}
         />
       ))}
@@ -48,12 +48,14 @@ function rows(selectedIndex: number, width: number) {
   );
 }
 
+for (const tier of GLYPH_TIERS) {
 for (const mode of AMBIGUOUS_MODES) {
-  describe(`row geometry (ambiguous ${mode})`, () => {
+  const tierGlyphs = getGlyphs(tier);
+  describe(`row geometry (${tier}, ambiguous ${mode})`, () => {
     for (const width of WIDTHS) {
       test(`at ${width} columns every row measures exactly ${width} cells`, async () => {
         setAmbiguousWidth(mode);
-        const lines = await renderLines(rows(0, width), width);
+        const lines = await renderLines(rows(0, width, tierGlyphs), width);
         expect(lines).toHaveLength(nodes.length);
         for (const line of lines) {
           expect(stringWidth(line)).toBe(width);
@@ -61,10 +63,21 @@ for (const mode of AMBIGUOUS_MODES) {
         setAmbiguousWidth('narrow');
       });
 
+      // truncate-end eats the last column and puts the ellipsis in its place, so
+      // a row that ends in one was wider than the terminal.
+      test(`at ${width} columns no row ends in the ellipsis`, async () => {
+        setAmbiguousWidth(mode);
+        const lines = await renderLines(rows(0, width, tierGlyphs), width);
+        setAmbiguousWidth('narrow');
+        for (const line of lines) {
+          expect(line.endsWith(tierGlyphs.ellipsis)).toBe(false);
+        }
+      });
+
       test(`at ${width} columns the id starts at the same index on every depth`, async () => {
         setAmbiguousWidth(mode);
-        const grid = rowLayout(width, glyphs);
-        const lines = await renderLines(rows(0, width), width);
+        const grid = rowLayout(width, tierGlyphs);
+        const lines = await renderLines(rows(0, width, tierGlyphs), width);
         setAmbiguousWidth('narrow');
 
         const idStart = grid.gutter + grid.status + grid.gap;
@@ -80,6 +93,7 @@ for (const mode of AMBIGUOUS_MODES) {
       });
     }
   });
+}
 }
 
 describe('row content', () => {
@@ -119,5 +133,25 @@ describe('row content', () => {
       widths.add(stringWidth(line!));
     }
     expect([...widths]).toEqual([70]);
+  });
+});
+
+describe('deep nesting', () => {
+  // Nine levels of indent cost more cells than the ID column has; the row must
+  // still end on its own last column rather than on truncate-end's ellipsis.
+  const deep = {
+    ...nodes[2]!,
+    depth: 9,
+    prefix: '\u2502  '.repeat(9),
+    issue: { ...nodes[2]!.issue, id: 'bdui-platform-1a8.23.14.7.2' },
+  };
+
+  test.each(WIDTHS)('measures exactly %i cells at depth 9', async width => {
+    const [line] = await renderLines(
+      <ListRow node={deep} isSelected={false} theme={theme} glyphs={glyphs} width={width} />,
+      width,
+    );
+    expect(stringWidth(line!)).toBe(width);
+    expect(line!.endsWith(glyphs.ellipsis)).toBe(false);
   });
 });

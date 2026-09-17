@@ -24,6 +24,25 @@ interface ColumnState {
   scrollOffset: number;
 }
 
+// Kanban columns page in whole cards, against the height the view was given
+// rather than the terminal's, so an open filter panel shortens the page.
+function columnPaging(
+  viewHeight: number,
+  columnStates: Record<StatusKey, ColumnState>,
+): { itemsPerPage: number; columnStates: Record<StatusKey, ColumnState> } {
+  const body = Math.max(listBudget('kanban', viewHeight).body, LAYOUT.issueCardHeight);
+  const itemsPerPage = Math.max(Math.floor(body / LAYOUT.issueCardHeight), 1);
+  const paged = { ...columnStates };
+  for (const statusKey of STATUS_KEYS) {
+    const selectedIndex = paged[statusKey].selectedIndex;
+    paged[statusKey] = {
+      selectedIndex,
+      scrollOffset: Math.floor(selectedIndex / itemsPerPage) * itemsPerPage,
+    };
+  }
+  return { itemsPerPage, columnStates: paged };
+}
+
 // Toast message for user feedback
 interface ToastMessage {
   id: string;
@@ -54,6 +73,7 @@ export interface BeadsStore {
   selectedColumn: number; // open/in_progress/blocked/closed/other
   columnStates: Record<StatusKey, ColumnState>; // Independent pagination per column
   itemsPerPage: number;
+  chromeHeight: number;
 
   // UI state
   viewMode: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories' | 'create-issue' | 'edit-issue';
@@ -112,6 +132,7 @@ export interface BeadsStore {
   getVisibleColumns: () => VisibleColumns;
   getRowVisibleIds: () => Set<string>;
   setTerminalSize: (width: number, height: number) => void;
+  setChromeHeight: (rows: number) => void;
 
   // Navigation actions
   moveUp: () => void;
@@ -254,6 +275,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   selectedColumn: 0,
   columnStates: resetColumnStates(),
   itemsPerPage: 10, // Will be recalculated based on terminal height
+  chromeHeight: 0,
 
   // UI state
   viewMode: 'tree',
@@ -288,19 +310,16 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   statusVisibility: { ...DEFAULT_STATUS_VISIBILITY },
 
   setTerminalSize: (width, height) => {
-    const issueCardHeight = LAYOUT.issueCardHeight;
-    const availableHeight = Math.max(listBudget('kanban', height).body, issueCardHeight);
-    const itemsPerPage = Math.max(Math.floor(availableHeight / issueCardHeight), 1);
-    const columnStates = { ...get().columnStates };
-    for (const statusKey of STATUS_KEYS) {
-      const selectedIndex = columnStates[statusKey].selectedIndex;
-      columnStates[statusKey] = {
-        selectedIndex,
-        scrollOffset: Math.floor(selectedIndex / itemsPerPage) * itemsPerPage,
-      };
-    }
+    set({
+      terminalWidth: width,
+      terminalHeight: height,
+      ...columnPaging(height - get().chromeHeight, get().columnStates),
+    });
+  },
 
-    set({ terminalWidth: width, terminalHeight: height, itemsPerPage, columnStates });
+  setChromeHeight: (rows) => {
+    if (rows === get().chromeHeight) return;
+    set({ chromeHeight: rows, ...columnPaging(get().terminalHeight - rows, get().columnStates) });
   },
 
   setData: (data) => {

@@ -13,8 +13,8 @@ export function stripAnsi(text: string): string {
  *
  * Ink writes cursor escapes and the frame as separate chunks, and unmounting
  * emits a second frame, so the first chunk carrying text is the whole frame.
- * The faked stdout decides the width Ink lays out to; it does not reach chalk,
- * which read the real stream at import, so colour depth stays a parameter.
+ * The faked stdout decides only the width Ink lays out to; colour depth belongs
+ * to chalk and stays a parameter of the caller.
  */
 export async function renderFrame(
   node: React.ReactNode,
