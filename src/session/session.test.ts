@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { chalkLevelFor, depthFromChalkLevel, resolveColorDepth } from './colors';
-import { DEFAULT_AMBIGUOUS_WIDTH, resolveAmbiguousWidth, widthFromProbeColumn } from './ambiguous';
+import { Readable } from 'node:stream';
+import {
+  DEFAULT_AMBIGUOUS_WIDTH,
+  probeAmbiguousWidth,
+  resolveAmbiguousWidth,
+  widthFromProbeColumn,
+} from './ambiguous';
 import { GLYPH_TIERS, getGlyphs, resolveGlyphTier } from './glyphs';
 import { glyphCheckText, handleCliArgs, HELP_TEXT } from '../cli';
 
@@ -135,5 +141,103 @@ describe('informational flags', () => {
     for (const name of ['BDUI_GLYPHS', 'BDUI_COLOR', 'BDUI_AMBIGUOUS', 'NO_COLOR']) {
       expect(HELP_TEXT).toContain(name);
     }
+  });
+});
+
+describe('ambiguous width probe', () => {
+  const CPR = (column: number) => `\x1b[45;${column}R`;
+
+  function fakeTerminal(tty = true) {
+    const input = new Readable({ read() {} }) as NodeJS.ReadStream;
+    Object.assign(input, {
+      isTTY: tty,
+      isRaw: false,
+      setRawMode(mode: boolean) {
+        this.isRaw = mode;
+        return this;
+      },
+    });
+    const written: string[] = [];
+    const output = {
+      isTTY: tty,
+      write(text: string) {
+        written.push(text);
+        return true;
+      },
+    } as unknown as NodeJS.WriteStream;
+    return { input, output, written };
+  }
+
+  // Ink consumes stdin through 'readable' and read(); a consumer wired the same
+  // way must see every byte the probe did not claim for itself.
+  function drainLikeInk(input: NodeJS.ReadStream): Promise<string> {
+    return new Promise(resolve => {
+      let seen = '';
+      input.addListener('readable', () => {
+        let chunk: Buffer | string | null;
+        while ((chunk = input.read()) !== null) seen += chunk.toString();
+        if (seen.length > 0) resolve(seen);
+      });
+    });
+  }
+
+  test('asks the terminal and reads the width off the answer', async () => {
+    const { input, output, written } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    expect(written.join('')).toContain('\x1b[6n');
+    input.push(CPR(3));
+    expect(await probe).toBe('wide');
+  });
+
+  test('narrow when the cursor moved one column', async () => {
+    const { input, output } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    input.push(CPR(2));
+    expect(await probe).toBe('narrow');
+  });
+
+  test('hands keystrokes around the answer on to the next consumer', async () => {
+    const { input, output } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    input.push(`a${CPR(2)}b`);
+    expect(await probe).toBe('narrow');
+    expect(input.listenerCount('readable')).toBe(0);
+    expect(input.listenerCount('data')).toBe(0);
+    expect(await drainLikeInk(input)).toBe('ab');
+  });
+
+  test('keeps the stream readable for Ink after a split answer', async () => {
+    const { input, output } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    input.push('\x1b[45');
+    input.push(';3R');
+    expect(await probe).toBe('wide');
+    const next = drainLikeInk(input);
+    input.push('q');
+    expect(await next).toBe('q');
+  });
+
+  test('falls back to narrow when the terminal stays silent, without eating keys', async () => {
+    const { input, output } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    input.push('j');
+    expect(await probe).toBe(DEFAULT_AMBIGUOUS_WIDTH);
+    expect(input.listenerCount('readable')).toBe(0);
+    expect(await drainLikeInk(input)).toBe('j');
+  });
+
+  test('restores the raw-mode state it found', async () => {
+    const { input, output } = fakeTerminal();
+    const probe = probeAmbiguousWidth({ input, output });
+    expect(input.isRaw).toBe(true);
+    input.push(CPR(2));
+    await probe;
+    expect(input.isRaw).toBe(false);
+  });
+
+  test('does not touch a stream that is not a terminal', async () => {
+    const { input, output, written } = fakeTerminal(false);
+    expect(await probeAmbiguousWidth({ input, output })).toBe(DEFAULT_AMBIGUOUS_WIDTH);
+    expect(written).toEqual([]);
   });
 });
