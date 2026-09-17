@@ -54,6 +54,10 @@ export interface GlyphSet {
   indicator: string;
   /** The Enter key, as the footer names it. */
   enter: string;
+  /** The chrome rules and the junctions where the panel's border meets them. */
+  rule: string;
+  ruleDown: string;
+  ruleUp: string;
 
   // Ink draws its own frames from cli-boxes, so the tier has to map those too.
   border: (style: BorderStyleName) => BorderStyleName;
@@ -92,6 +96,9 @@ const FANCY: GlyphSet = {
   middot: '·',
   indicator: '●',
   enter: '↵',
+  rule: '─',
+  ruleDown: '┬',
+  ruleUp: '┴',
   border: style => style,
 };
 
@@ -128,6 +135,9 @@ const SAFE: GlyphSet = {
   middot: '·',
   indicator: '■',
   enter: 'Enter',
+  rule: '─',
+  ruleDown: '┬',
+  ruleUp: '┴',
   // Rounded corners are not in CP437; single and double are.
   border: style => (style === 'round' ? 'single' : style),
 };
@@ -165,6 +175,9 @@ const ASCII: GlyphSet = {
   middot: '.',
   indicator: '*',
   enter: 'Enter',
+  rule: '-',
+  ruleDown: '+',
+  ruleUp: '+',
   border: () => 'classic',
 };
 

@@ -7,7 +7,7 @@ import { ListHeader, ListRow, idColumnWidth } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
 import { Footer } from './Footer';
 import { Header, type HeaderStat } from './Header';
-import { listBudget, rowLayout, splitViewLayout } from '../utils/constants';
+import { listBudget, splitViewLayout } from '../utils/constants';
 import type { BeadsData } from '../types';
 
 interface TreeViewProps {
@@ -15,8 +15,6 @@ interface TreeViewProps {
   terminalWidth: number;
   terminalHeight: number;
 }
-
-const TRAILER_ROWS = 1;
 
 export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps) {
   const showDetails = useBeadsStore(state => state.showDetails);
@@ -33,10 +31,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   );
   const tree = useMemo(() => buildVisibleTree(data, visibleIds), [data, visibleIds]);
 
-  // One row under the list belongs to the trailer that counts what scrolled
-  // out of view; it is reserved even while the list fits, so folding a parent
-  // never moves the rows below it.
-  const budget = listBudget('tree', terminalHeight, TRAILER_ROWS);
+  const budget = listBudget('tree', terminalHeight);
   // Details replace the list only when the terminal is too narrow to split; there
   // the arrow keys scroll the panel, otherwise they navigate the list.
   const split = splitViewLayout(terminalWidth);
@@ -53,6 +48,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
 
   const detailsVisible = showDetails && selectedIssue !== undefined;
   const detailsAlongside = detailsVisible && split.fits;
+  const listShown = !detailsVisible || detailsAlongside;
   const listWidth = detailsAlongside ? split.listWidth : terminalWidth;
 
   const stats: HeaderStat[] = [
@@ -60,28 +56,31 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
     { text: `${tree.length} roots` },
     { text: `${flatNodes.length === 0 ? 0 : selectedIndex + 1}/${flatNodes.length}`, strong: true },
   ];
-  const trailerIndent = (({ gutter, status, gap }) => gutter + status + gap)(rowLayout(listWidth, glyphs));
   const idWidth = idColumnWidth(flatNodes, glyphs, listWidth);
+  const panel = detailsAlongside ? { width: split.panelWidth } : undefined;
 
   return (
     <Box flexDirection="column" width="100%" height={terminalHeight}>
-      <Header view="Tree" stats={stats} width={terminalWidth} />
-      <ListHeader theme={theme} glyphs={glyphs} width={listWidth} idWidth={idWidth} />
+      <Header
+        view="Tree"
+        stats={stats}
+        width={terminalWidth}
+        panel={panel && selectedIssue ? { ...panel, title: selectedIssue.id } : undefined}
+      />
 
       <Box flexGrow={1} overflow="hidden">
         {flatNodes.length === 0 ? (
           <Text {...theme.ink.faint}>No issues to display</Text>
-        ) : detailsVisible && !detailsAlongside ? (
-          <Box flexGrow={1} overflow="hidden">
-            <DetailPanel
-              issue={selectedIssue ?? null}
-              maxHeight={budget.panelHeight}
-              availableWidth={terminalWidth}
-            />
-          </Box>
+        ) : !listShown ? (
+          <DetailPanel
+            issue={selectedIssue ?? null}
+            maxHeight={budget.panelHeight}
+            availableWidth={terminalWidth}
+          />
         ) : (
           <>
             <Box flexDirection="column" flexShrink={0} width={listWidth}>
+              <ListHeader theme={theme} glyphs={glyphs} width={listWidth} idWidth={idWidth} />
               {visibleNodes.map((node, idx) => (
                 <ListRow
                   key={node.issue.id}
@@ -93,24 +92,26 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
                   idWidth={idWidth}
                 />
               ))}
-              {(scrollOffset > 0 || below > 0) && (
-                <Box width={listWidth} justifyContent="space-between" paddingLeft={trailerIndent}>
-                  <Text {...theme.ink.rule}>
-                    {scrollOffset > 0 ? `${glyphs.scrollUp} ${scrollOffset}` : ''}
-                  </Text>
-                  <Text {...theme.ink.rule}>
-                    {below > 0 ? `${glyphs.scrollDown} ${below} more` : ''}
-                  </Text>
-                </Box>
-              )}
             </Box>
             {detailsAlongside && (
-              <Box marginLeft={1} flexGrow={1} overflow="hidden">
+              <Box
+                marginLeft={1}
+                width={split.panelWidth}
+                flexShrink={0}
+                borderStyle={glyphs.border('single')}
+                borderLeft
+                borderTop={false}
+                borderRight={false}
+                borderBottom={false}
+                borderColor={theme.colors.rule}
+                overflow="hidden"
+              >
                 <DetailPanel
                   issue={selectedIssue ?? null}
                   maxHeight={budget.panelHeight}
-                  availableWidth={split.panelWidth}
+                  availableWidth={split.panelWidth - 1}
                   enablePaging={false}
+                  chrome="hosted"
                 />
               </Box>
             )}
@@ -118,7 +119,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
         )}
       </Box>
 
-      <Footer currentView="tree" />
+      <Footer currentView="tree" trailer={listShown ? { above: scrollOffset, below } : undefined} panel={panel} />
     </Box>
   );
 }

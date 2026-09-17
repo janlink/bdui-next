@@ -216,7 +216,7 @@ test('detail paging starts exactly one row past each visible layout boundary', a
   const layouts = [
     { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 80, pageRows: 11 },
     { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 11 },
-    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 11 },
+    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 12 },
     { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 9 },
   ];
 

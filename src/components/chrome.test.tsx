@@ -8,6 +8,7 @@ import { splitViewLayout } from '../utils/constants';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { pressKeys, renderLines } from '../test-utils/ink-render';
 import { Board } from './Board';
+import { Footer } from './Footer';
 import type { BeadsStore } from '../state/store';
 
 const HEIGHT = 45;
@@ -65,43 +66,56 @@ describe('view chrome', () => {
     test(`${viewMode} fills exactly ${HEIGHT} rows and ends on the footer`, async () => {
       const lines = await frameOf({ viewMode });
       expect(lines).toHaveLength(HEIGHT);
-      expect(lines[HEIGHT - 2]).toContain('Tree');
-      expect(lines[HEIGHT - 2]).toContain('Memories');
-      expect(lines[HEIGHT - 2]).toContain('? help');
+      expect(lines[HEIGHT - 2]).toMatch(/^─ 1 Tree ─ .*─ 5 Memories ─+/);
+      expect(lines[HEIGHT - 1]).toContain('? help');
       expect(lines[HEIGHT - 1]).toContain('deferred');
     });
   }
 
-  // 20 rows leave 15 for the list: header, column heads, 15 rows, the trailer
+  // 20 rows leave 16 for the list: the header rule, the column heads, 16 rows
   // and the two footer rows.
-  test('tree counts the rows below the window in a trailer under the list', async () => {
+  test('tree counts the rows below the window in the footer rule', async () => {
     const lines = await frameOf({ viewMode: 'tree', terminalHeight: 20, showDetails: false });
     expect(lines).toHaveLength(20);
-    expect(lines[16]).toContain('bd-0014');
-    expect(lines[17]!.trimEnd().endsWith(`${getGlyphs('fancy').scrollDown} 17 more`)).toBe(true);
-    expect(lines[18]).toContain('Tree');
+    expect(lines[17]).toContain('bd-0015');
+    expect(lines[18]).toMatch(new RegExp(`^─ 1 Tree ─ .* ${getGlyphs('fancy').scrollDown} 16 more ─$`));
   });
 
-  test('tree leaves the trailer row blank while the list fits', async () => {
+  test('tree carries no trailer while the list fits', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: false });
     expect(lines.some(line => line.includes(' more'))).toBe(false);
     expect(lines[HEIGHT - 1]).toContain('deferred');
   });
 
-  test('the split detail panel draws its left border on every body row', async () => {
+  test('the split detail panel joins the rules and draws its border on every body row', async () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: true });
-    const border = getGlyphs('fancy').treeVertical;
+    const glyphs = getGlyphs('fancy');
     const column = splitViewLayout(WIDTH).listWidth + 1;
-    for (const line of lines.slice(2, HEIGHT - 2)) {
-      expect(line[column]).toBe(border);
+    expect(lines[0]![column]).toBe(glyphs.ruleDown);
+    expect(lines[0]!.slice(column + 1)).toMatch(/^─ bd-0000 ─+$/);
+    for (const line of lines.slice(1, HEIGHT - 2)) {
+      expect(line[column]).toBe(glyphs.treeVertical);
     }
-    expect(lines[HEIGHT - 2]![column]).not.toBe(border);
+    expect(lines[HEIGHT - 2]![column]).toBe(glyphs.ruleUp);
+    expect(lines[HEIGHT - 2]!.slice(column + 1)).toMatch(/^─ e edit {2}x export {2}esc close ─+$/);
+    // The rules name the issue and the keys, so the panel does not repeat them.
+    const panel = lines.slice(1, HEIGHT - 2).map(line => line.slice(column + 1));
+    expect(panel.some(line => line.includes('esc close'))).toBe(false);
+    expect(panel.some(line => line.trim() === 'bd-0000')).toBe(false);
+  });
+
+  test('the replacing detail panel keeps its own id and key rows and silences the trailer', async () => {
+    const lines = await frameOf({ viewMode: 'tree', showDetails: true, terminalHeight: 20 }, 80);
+    expect(lines.some(line => /^│ bd-0000\s*$/.test(line))).toBe(true);
+    expect(lines.some(line => line.includes('esc close'))).toBe(true);
+    expect(lines[18]).not.toContain('esc close');
+    expect(lines[18]).not.toContain(' more');
   });
 
   test('shared chrome above the view shortens the view, not the frame', async () => {
     const lines = await frameOf({ viewMode: 'tree', showSearch: true });
     expect(lines).toHaveLength(HEIGHT);
-    expect(lines[HEIGHT - 2]).toContain('? help');
+    expect(lines[HEIGHT - 1]).toContain('? help');
   });
 });
 
@@ -127,37 +141,69 @@ describe('the ascii tier', () => {
 });
 
 describe('footer', () => {
-  // The narrow end: the tab names go before the hints do, the hints leave one
-  // by one, and help is the last to go.
+  // The narrow end: the tab names go before the filter note does, the hints
+  // leave one by one, and help is the last to go.
   for (const mode of ['narrow', 'wide'] as const) {
   for (const width of [60, 70, 91, 92, 140]) {
     test(`stays two rows at ${width} columns (ambiguous ${mode})`, async () => {
       setAmbiguousWidth(mode);
       const lines = await frameOf({ viewMode: 'tree' }, width);
+      const rule = lines[HEIGHT - 2]!;
+      const hints = lines[HEIGHT - 1]!;
+      const ruleWidth = stringWidth(rule);
+      const hintsWidth = stringWidth(hints);
       setAmbiguousWidth('narrow');
       expect(lines).toHaveLength(HEIGHT);
-
-      const tabs = lines[HEIGHT - 2]!;
-      const legend = lines[HEIGHT - 1]!;
-      expect(stringWidth(tabs)).toBeLessThanOrEqual(width);
-      expect(stringWidth(legend)).toBeLessThanOrEqual(width);
-      expect(tabs).toMatch(/^ {2}1 /);
-      expect(tabs).toContain('? help');
-      expect(tabs).toContain('n on');
-      expect(legend).toContain('open');
+      expect(ruleWidth).toBe(width);
+      expect(rule).toMatch(/^─ 1 /);
+      expect(rule).toContain('filter: closed hidden');
+      // Ink caches a text's measured width by its string, so the hints row,
+      // whose words are the same in both modes, keeps the narrow measurement
+      // here; a real terminal never changes mode mid-session.
+      if (mode === 'narrow') {
+        expect(hintsWidth).toBeLessThanOrEqual(width);
+        expect(hints).toContain('? help');
+        expect(hints).toContain('n on');
+      }
     });
   }
   }
 
-  test('names the tabs and offers every hint when the row is wide enough', async () => {
-    const [tabs] = (await frameOf({ viewMode: 'tree' })).slice(HEIGHT - 2);
-    expect(tabs).toContain('1 Tree  2 Kanban  3 Graph  4 Stats  5 Memories');
-    for (const word of ['search', 'filter', 'details', 'cmd', 'help']) expect(tabs).toContain(word);
+  test('names the tabs and offers every hint when the rows are wide enough', async () => {
+    const [rule, hints] = (await frameOf({ viewMode: 'tree' })).slice(HEIGHT - 2);
+    expect(rule).toContain('─ 1 Tree ─ 2 Kanban ─ 3 Graph ─ 4 Stats ─ 5 Memories ─');
+    for (const word of ['search', 'filter', 'details', 'cmd', 'help']) expect(hints).toContain(word);
   });
 
-  test('names the hidden statuses at the end of the legend row', async () => {
-    const lines = await frameOf({ viewMode: 'tree' });
-    expect(lines[HEIGHT - 1]!.trimEnd().endsWith('filter: closed hidden')).toBe(true);
+  test('sets the hidden statuses into the end of the rule', async () => {
+    const lines = await frameOf({ viewMode: 'tree', showDetails: false });
+    expect(lines[HEIGHT - 2]).toMatch(/─ filter: closed hidden ─$/);
+  });
+
+  test('shows the legend from 120 columns on, all of it or none', async () => {
+    const wide = await frameOf({ viewMode: 'tree' }, 120);
+    expect(wide[HEIGHT - 1]).toMatch(/○ open {2}◐ in progress {2}● blocked {2}✓ closed {2}◊ deferred {2}n on$/);
+    const narrow = await frameOf({ viewMode: 'tree' }, 119);
+    expect(narrow[HEIGHT - 1]).not.toContain('open');
+    expect(narrow[HEIGHT - 1]).toMatch(/\? help\s+n on$/);
+  });
+
+  test('brackets the active tab where no colour can mark it', async () => {
+    const lines = await frameOf({ viewMode: 'graph', theme: getTheme('default', 'none') });
+    expect(lines[HEIGHT - 2]).toContain('─ 1 Tree ─ 2 Kanban ─ [3 Graph] ─ 4 Stats ─');
+  });
+
+  // The rule's right end, narrowing: the tab names go, the note shortens, the
+  // note goes; the trailer stays to the last.
+  test.each([
+    [96, '─ 1 Tree ─ 2 Kanban ─ 3 Graph ─ 4 Stats ─ 5 Memories ── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
+    [63, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
+    [60, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ── filter: closed hi… ─ ↑ 3  ↓ 17 more ─'],
+    [50, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ───────────── ↑ 3  ↓ 17 more ─'],
+  ])('at %i columns sets the trailer into the rule as %s', async (width, expected) => {
+    useBeadsStore.setState({ terminalWidth: width, theme: getTheme('default', 'ansi256'), glyphs: getGlyphs('fancy') });
+    const [rule] = await renderLines(<Footer currentView="tree" trailer={{ above: 3, below: 17 }} />, width);
+    expect(rule).toBe(expected);
   });
 });
 
