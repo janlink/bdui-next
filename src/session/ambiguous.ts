@@ -37,6 +37,10 @@ export function probeAmbiguousWidth(
     return Promise.resolve(DEFAULT_AMBIGUOUS_WIDTH);
   }
 
+  // The probe consumes stdin the way Ink does, through 'readable' and read(),
+  // so the stream never enters flowing mode. Bun's TTY stdin does not survive
+  // the alternative: a pause() issued from inside a 'data' handler disarms the
+  // reader for good and every 'readable' listener added afterwards stays silent.
   return new Promise(resolve => {
     const wasRaw = input.isRaw;
     let pending = '';
@@ -46,29 +50,31 @@ export function probeAmbiguousWidth(
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      input.off('data', onData);
+      input.off('readable', onReadable);
       if (!wasRaw) input.setRawMode(false);
-      input.pause();
       output.write(ERASE_LINE);
       // Keystrokes that arrived during the probe are the user's, not ours.
       if (rest.length > 0) input.unshift(Buffer.from(rest, 'utf8'));
       resolve(width);
     };
 
-    const onData = (chunk: Buffer) => {
-      pending += chunk.toString('utf8');
-      const match = CURSOR_POSITION.exec(pending);
-      if (!match) return;
-      const rest = pending.slice(0, match.index) + pending.slice(match.index + match[0].length);
-      finish(widthFromProbeColumn(Number(match[2])), rest);
+    const onReadable = () => {
+      let chunk: Buffer | string | null;
+      while ((chunk = input.read()) !== null) {
+        pending += chunk.toString('utf8');
+        const match = CURSOR_POSITION.exec(pending);
+        if (!match) continue;
+        const rest = pending.slice(0, match.index) + pending.slice(match.index + match[0].length);
+        finish(widthFromProbeColumn(Number(match[2])), rest);
+        return;
+      }
     };
 
     const timer = setTimeout(() => finish(DEFAULT_AMBIGUOUS_WIDTH, pending), PROBE_TIMEOUT_MS);
 
     try {
       input.setRawMode(true);
-      input.resume();
-      input.on('data', onData);
+      input.on('readable', onReadable);
       output.write(`\r${PROBE_CHARACTER}${DEVICE_STATUS_REPORT}`);
     } catch {
       finish(DEFAULT_AMBIGUOUS_WIDTH, pending);
