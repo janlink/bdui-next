@@ -45,8 +45,8 @@ export const ROW_GRID = {
   gutter: 1,
   status: 1,
   gap: 1,
-  id: 27,
-  meta: 12,
+  id: 15,
+  meta: 16,
 } as const;
 
 /** Columns the grid spends before the title, at ambiguous-narrow width. */
@@ -69,7 +69,9 @@ export interface RowLayout {
  */
 export function rowLayout(width: number, glyphs: GlyphSet): RowLayout {
   const gutter = cellWidthOf([glyphs.gutter]);
-  const status = cellWidthOf(statusGlyphsOf(glyphs));
+  // Parents show a caret where leaves show their status, so both sets size
+  // the column.
+  const status = cellWidthOf([...statusGlyphsOf(glyphs), glyphs.caretCollapsed, glyphs.caretExpanded]);
   const fixed = gutter + status + ROW_GRID.gap + ROW_GRID.id + ROW_GRID.meta;
   return {
     gutter,

@@ -70,10 +70,13 @@ export function flattenTree(roots: TreeNode[], collapsed: ReadonlySet<string> = 
     flat.push({ issue: node.issue, depth: node.depth, isLast, prefix, hasChildren, collapsed: isCollapsed, parentId });
 
     if (!hasChildren || isCollapsed) return;
+    // A root has no branch of its own, so its children start at the column and
+    // no stem runs from one root down to the next; below that, every level
+    // costs two cells.
+    const stem = node.depth === 0 ? '' : isLast ? '  ' : '│ ';
     for (let i = 0; i < node.children.length; i++) {
       const childIsLast = i === node.children.length - 1;
-      const verticalLine = isLast ? '   ' : '│  ';
-      traverse(node.children[i], prefix + verticalLine, childIsLast, node.issue.id);
+      traverse(node.children[i], prefix + stem, childIsLast, node.issue.id);
     }
   }
 
