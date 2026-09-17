@@ -267,13 +267,13 @@ export function Board() {
       <CommandBar />
 
       {/* Export dialog - shared across all views */}
-      {showExportDialog && selectedIssue && (
+      {showExportDialog && (
         <Box
           position="absolute"
           marginTop={Math.max(0, Math.floor(terminalHeight / 2) - 10)}
           marginLeft={Math.max(0, Math.floor(terminalWidth / 2) - 35)}
         >
-          <ExportDialog issue={selectedIssue} onClose={toggleExportDialog} />
+          <ExportDialog issue={selectedIssue ?? null} onClose={toggleExportDialog} />
         </Box>
       )}
 

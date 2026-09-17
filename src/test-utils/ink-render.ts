@@ -65,3 +65,37 @@ export async function renderLines(
   const lines = stripAnsi(await renderFrame(node, columns, rows)).split('\n');
   return options.keepBlank ? lines : lines.filter(line => line.length > 0);
 }
+
+/**
+ * Mounts, feeds the keys one at a time, and unmounts.
+ *
+ * Nothing is asserted about the frames: this is for the handlers, which is
+ * where an overlay that never mounted stops answering the keyboard.
+ */
+export async function pressKeys(
+  node: React.ReactNode,
+  keys: readonly string[],
+  columns = 140,
+  rows = 45,
+): Promise<void> {
+  const stdout = new Writable({
+    write(_chunk, _encoding, callback) { callback(); },
+  }) as NodeJS.WriteStream;
+  Object.assign(stdout, { columns, rows, isTTY: true });
+  const stdin = new Readable({ read() {} }) as NodeJS.ReadStream;
+  Object.assign(stdin, {
+    isTTY: true,
+    isRaw: false,
+    setRawMode(mode: boolean) { this.isRaw = mode; return this; },
+    ref() { return this; },
+    unref() { return this; },
+  });
+
+  const instance = render(node, { stdout, stdin, debug: true, patchConsole: false });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  for (const key of keys) {
+    stdin.push(key);
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  instance.unmount();
+}

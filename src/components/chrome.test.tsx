@@ -2,11 +2,11 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import React from 'react';
 import { normalizeBeads } from '../bd/parser';
 import { getGlyphs } from '../session/glyphs';
-import { useBeadsStore } from '../state/store';
+import { isModalOpen, useBeadsStore } from '../state/store';
 import { getTheme } from '../themes/themes';
 import { FOOTER_PRIMARY_SHORTCUTS } from './Footer';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
-import { renderLines } from '../test-utils/ink-render';
+import { pressKeys, renderLines } from '../test-utils/ink-render';
 import { Board } from './Board';
 import type { BeadsStore } from '../state/store';
 
@@ -131,4 +131,44 @@ describe('footer', () => {
     });
   }
   }
+});
+
+// Every flag isModalOpen() answers to gates the navigation handlers off. If the
+// overlay behind one does not mount, no handler is left to read the keyboard and
+// the frame stops responding without looking any different.
+describe('modal flags', () => {
+  type ModalFlag =
+    | 'showSearch'
+    | 'showFilter'
+    | 'showExportDialog'
+    | 'showThemeSelector'
+    | 'showJumpToPage'
+    | 'showVisibilityPanel'
+    | 'showConfirmDialog';
+
+  const FLAGS: ModalFlag[] = [
+    'showSearch',
+    'showFilter',
+    'showExportDialog',
+    'showThemeSelector',
+    'showJumpToPage',
+    'showVisibilityPanel',
+    'showConfirmDialog',
+  ];
+
+  test.each(FLAGS)('%s hands the keyboard back on escape', async flag => {
+    useBeadsStore.setState({
+      data: normalizeBeads([]),
+      terminalWidth: WIDTH,
+      terminalHeight: HEIGHT,
+      theme: getTheme('default', 'ansi256'),
+      glyphs: getGlyphs('fancy'),
+      viewMode: 'tree',
+      ...(Object.fromEntries(FLAGS.map(name => [name, flag === name])) as Record<ModalFlag, boolean>),
+    });
+
+    await pressKeys(<Board />, ['\u001B']);
+
+    expect(isModalOpen(useBeadsStore.getState())).toBe(false);
+  });
 });

@@ -5,7 +5,10 @@ import { copyToClipboard, exportToFile, formatIssueMarkdown, formatIssueJSON, fo
 import type { Issue } from '../types';
 
 interface ExportDialogProps {
-  issue: Issue;
+  // The dialog stays mounted for as long as its flag is set, selection or not:
+  // a set flag with no overlay behind it gates every other handler off and
+  // leaves the keyboard dead.
+  issue: Issue | null;
   onClose: () => void;
 }
 
@@ -72,6 +75,7 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
   });
 
   const handleExport = async () => {
+    if (!issue) return;
     setIsExporting(true);
     setStatus(null);
 
@@ -111,6 +115,22 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
       setIsExporting(false);
     }
   };
+
+  if (!issue) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle={glyphs.border('double')}
+        borderColor={theme.colors.primary}
+        padding={1}
+        width={70}
+        backgroundColor={theme.colors.surface}
+      >
+        <Text {...theme.ink.strong}>Export Issue</Text>
+        <Text {...theme.ink.faint}>Nothing is selected. ESC to close.</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box
