@@ -111,10 +111,12 @@ function ListRowImpl({ node, isSelected, theme, glyphs, width }: RowProps) {
   const typeInk = closed ? rung(ink.faint) : { color: hue(getTypeColor(issue.issue_type, theme)) };
   const meta = rowMeta(issue, theme, ink);
   const metaInk = meta.style ? rung(meta.style) : { color: hue(meta.color ?? '') };
+  // Closed work is done arguing about urgency; its gutter goes grey with the row.
+  const gutterInk = closed ? rung(ink.rule) : { color: hue(getPriorityColor(issue.priority, theme)) };
 
   return (
     <Text {...(isSelected ? theme.selection : NO_SELECTION)} wrap="truncate-end">
-      <Text color={hue(getPriorityColor(issue.priority, theme))}>
+      <Text {...gutterInk}>
         {padEndCells(gutterVisible ? glyphs.gutter : ' ', grid.gutter)}
       </Text>
       <Text {...glyphInk}>{padEndCells(rowGlyph(node, glyphs), grid.status)}</Text>

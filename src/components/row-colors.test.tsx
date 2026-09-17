@@ -47,13 +47,32 @@ describe('256 colours', () => {
   test('paints the selected row as one background run from the first cell', async () => {
     const line = await renderAt('ansi256', true);
     expect(line.match(/\[48;5;\d+m/g)).toHaveLength(1);
-    expect(line.startsWith('[48;5;235m')).toBe(true);
+    expect(line.startsWith('[48;5;237m')).toBe(true);
     expect(line).toEndWith('[49m');
   });
 
   test('leaves an unselected row without a background', async () => {
     const line = await renderAt('ansi256', false);
     expect(line).not.toContain('48;5;');
+  });
+
+  // Colour is spent on status; a closed row has nothing left to be urgent about.
+  test('paints the gutter in the priority colour on an open row and in rule grey on a closed one', async () => {
+    chalk.level = chalkLevelFor('ansi256');
+    const theme = getTheme('default', 'ansi256');
+    const gutter = getGlyphs('fancy').gutter;
+    const rowOf = async (status: string) => {
+      const closedData = normalizeBeads([{ id: 'bd-0001', title: 'Row under test', status, issue_type: 'task', priority: 1 }]);
+      const closedNode = flattenTree(buildVisibleTree(closedData, new Set(['bd-0001'])))[0]!;
+      const frame = await renderFrame(
+        <ListRow node={closedNode} isSelected={false} theme={theme} glyphs={getGlyphs('fancy')} width={50} />,
+        50,
+      );
+      return frame.split('\n')[0]!;
+    };
+    expect(await rowOf('open')).toContain(`[38;5;209m${gutter}`);
+    expect(await rowOf('closed')).toContain(`[38;5;239m${gutter}`);
+    expect(await rowOf('closed')).not.toContain('38;5;209m');
   });
 });
 

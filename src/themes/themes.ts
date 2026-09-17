@@ -198,7 +198,7 @@ function theme256(name: string, palette: Palette): Theme {
       primary: c(open),
       border: c(236),
       surface: c(234),
-      surfaceSel: c(235),
+      surfaceSel: c(237),
 
       success: c(closed),
       error: c(blocked),
@@ -206,7 +206,7 @@ function theme256(name: string, palette: Palette): Theme {
     },
     ink: LADDER_256,
     inkSelected: lift(LADDER_256),
-    selection: { backgroundColor: c(235) },
+    selection: { backgroundColor: c(237) },
   };
 }
 
