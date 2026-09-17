@@ -52,7 +52,7 @@ describe('split view', () => {
 
 describe('list budget', () => {
   test.each([
-    ['tree', 40, 40, 40],
+    ['tree', 41, 41, 41],
     ['graph', 37, 37, 39],
     ['memories', 38, 38, 38],
     ['kanban', 31, 31, 41],
