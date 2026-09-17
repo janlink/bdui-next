@@ -1,14 +1,13 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 
 export function ConfirmDialog() {
   const showConfirmDialog = useBeadsStore(state => state.showConfirmDialog);
   const confirmDialogData = useBeadsStore(state => state.confirmDialogData);
   const hideConfirm = useBeadsStore(state => state.hideConfirm);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   useInput((input, key) => {
     if (!showConfirmDialog) return;
@@ -38,9 +37,9 @@ export function ConfirmDialog() {
     >
       <Box
         flexDirection="column"
-        borderStyle="double"
+        borderStyle={glyphs.border('double')}
         borderColor={theme.colors.warning}
-        backgroundColor="black"
+        backgroundColor={theme.colors.surface}
         padding={2}
         width={50}
       >
@@ -49,22 +48,22 @@ export function ConfirmDialog() {
         </Text>
 
         <Box marginY={1}>
-          <Text>{confirmDialogData.message}</Text>
+          <Text {...theme.ink.text}>{confirmDialogData.message}</Text>
         </Box>
 
         <Box gap={2} justifyContent="center">
-          <Text>
+          <Text {...theme.ink.text}>
             <Text color={theme.colors.success} bold>[Y]</Text>
-            <Text> Yes</Text>
+            <Text {...theme.ink.text}> Yes</Text>
           </Text>
-          <Text>
+          <Text {...theme.ink.text}>
             <Text color={theme.colors.error} bold>[N]</Text>
-            <Text> No</Text>
+            <Text {...theme.ink.text}> No</Text>
           </Text>
         </Box>
 
         <Box marginTop={1} justifyContent="center">
-          <Text dimColor>Press Y to confirm, N or ESC to cancel</Text>
+          <Text {...theme.ink.faint}>Press Y to confirm, N or ESC to cancel</Text>
         </Box>
       </Box>
     </Box>

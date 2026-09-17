@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore, isModalOpen } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { loadMemories, forgetMemory } from '../bd/memories';
 import type { Memory } from '../types';
-import { Footer, getFooterHeight } from './Footer';
+import { Footer } from './Footer';
+import { listBudget } from '../utils/constants';
 
 interface MemoriesViewProps {
   terminalWidth: number;
@@ -12,12 +12,12 @@ interface MemoriesViewProps {
 }
 
 export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const beadsPath = useBeadsStore(state => state.beadsPath);
   const showToast = useBeadsStore(state => state.showToast);
   const showConfirm = useBeadsStore(state => state.showConfirm);
   const modalOpen = useBeadsStore(isModalOpen);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +51,7 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
     });
   }, [memories.length]);
 
-  const headerHeight = 2;
-  const hintHeight = 1;
-  const bodyHeight = Math.max(3, terminalHeight - headerHeight - hintHeight - getFooterHeight());
-  const itemsPerPage = bodyHeight;
+  const itemsPerPage = listBudget('memories', terminalHeight).itemsPerPage;
 
   const scrollFor = (selectedIndex: number, scrollOffset: number): number => {
     if (selectedIndex < scrollOffset) return selectedIndex;
@@ -147,7 +144,7 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
               {visible.map((memory, idx) => {
                 const isSelected = nav.scrollOffset + idx === selectedIndex;
                 const label = memory.key.length > keyColumnWidth
-                  ? memory.key.slice(0, keyColumnWidth - 1) + '…'
+                  ? memory.key.slice(0, keyColumnWidth - 1) + glyphs.ellipsis
                   : memory.key;
                 return (
                   <Text
@@ -155,15 +152,15 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
                     color={isSelected ? theme.colors.primary : theme.colors.text}
                     bold={isSelected}
                   >
-                    {isSelected ? '❯ ' : '  '}{label}
+                    {isSelected ? `${glyphs.prompt} ` : '  '}{label}
                   </Text>
                 );
               })}
               <Box marginTop={1} justifyContent="space-between" width={listWidth}>
-                <Text color={theme.colors.warning}>{nav.scrollOffset > 0 ? `↑ ${nav.scrollOffset}` : ''}</Text>
+                <Text color={theme.colors.warning}>{nav.scrollOffset > 0 ? `${glyphs.scrollUp} ${nav.scrollOffset}` : ''}</Text>
                 <Text color={theme.colors.warning}>
                   {nav.scrollOffset + itemsPerPage < memories.length
-                    ? `↓ ${memories.length - (nav.scrollOffset + itemsPerPage)}`
+                    ? `${glyphs.scrollDown} ${memories.length - (nav.scrollOffset + itemsPerPage)}`
                     : ''}
                 </Text>
               </Box>
@@ -176,12 +173,12 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
                 paddingX={1}
                 flexGrow={1}
                 flexDirection="column"
-                borderStyle="round"
+                borderStyle={glyphs.border('round')}
                 borderColor={theme.colors.border}
                 overflow="hidden"
                 width={detailWidth}
               >
-                <Text bold color={theme.colors.secondary}>{selected.key}</Text>
+                <Text bold color={theme.colors.textDim}>{selected.key}</Text>
                 <Box marginTop={1}>
                   <Text color={theme.colors.text} wrap="wrap">{selected.value}</Text>
                 </Box>

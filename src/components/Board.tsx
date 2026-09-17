@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { StatusColumn } from './StatusColumn';
 import { DetailPanel } from './DetailPanel';
 import { HelpOverlay } from './HelpOverlay';
@@ -20,8 +19,8 @@ import { Toast } from './Toast';
 import { FiltersBanner } from './FiltersBanner';
 import { ConfirmDialog } from './ConfirmDialog';
 import { CommandBar } from './CommandBar';
-import { hasActiveFilters, CHROME_HEIGHT, LAYOUT } from '../utils/constants';
-import { Footer, getFooterHeight } from './Footer';
+import { hasActiveFilters, listBudget, CHROME_HEIGHT, LAYOUT } from '../utils/constants';
+import { Footer } from './Footer';
 
 function KanbanView({ height }: { height: number }) {
   const data = useBeadsStore(state => state.data);
@@ -36,8 +35,7 @@ function KanbanView({ height }: { height: number }) {
   const getVisibleColumns = useBeadsStore(state => state.getVisibleColumns);
   const searchQuery = useBeadsStore(state => state.searchQuery);
   const filter = useBeadsStore(state => state.filter);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   const selectedIssue = getSelectedIssue();
   const visibleColumnsByStatus = useMemo(
@@ -64,8 +62,7 @@ function KanbanView({ height }: { height: number }) {
     ? MIN_COLUMN_WIDTH
     : Math.min(MAX_COLUMN_WIDTH, Math.floor(widthForColumns / visibleColumns));
   const detailWidth = terminalWidth - visibleColumns * columnWidth - 2;
-  // Header: 2. Shared chrome above the view is already excluded from `height`.
-  const detailsHeight = Math.max(1, height - 2 - getFooterHeight());
+  const detailsHeight = listBudget('kanban', height).panelHeight;
 
   const statusConfig = [
     { key: 'open', title: 'Open' },
@@ -176,8 +173,7 @@ export function Board() {
   const showThemeSelector = useBeadsStore(state => state.showThemeSelector);
   const toggleExportDialog = useBeadsStore(state => state.toggleExportDialog);
   const toggleThemeSelector = useBeadsStore(state => state.toggleThemeSelector);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   const selectedIssue = getSelectedIssue();
 

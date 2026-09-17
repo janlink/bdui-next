@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { closeIssue, updateIssue } from '../bd/commands';
 
 type CommandMode = 'command' | 'jump';
@@ -30,8 +29,8 @@ export function CommandBar() {
   const toggleHelp = useBeadsStore(state => state.toggleHelp);
   const toggleVisibilityPanel = useBeadsStore(state => state.toggleVisibilityPanel);
   const resetStatusVisibility = useBeadsStore(state => state.resetStatusVisibility);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const [input, setInput] = useState('');
   const totalPages = getTotalPages();
@@ -142,7 +141,7 @@ export function CommandBar() {
               await updateIssue(selectedIssue.id, { status: newStatus });
             }
             if (reloadCallback) reloadCallback();
-            return { success: true, message: `Status → ${newStatus}` };
+            return { success: true, message: `Status: ${newStatus}` };
           } catch (e) {
             return { success: false, message: `Failed: ${e}` };
           }
@@ -160,7 +159,7 @@ export function CommandBar() {
           try {
             await updateIssue(selectedIssue.id, { priority: prioArg });
             if (reloadCallback) reloadCallback();
-            return { success: true, message: `Priority → P${prioArg}` };
+            return { success: true, message: `Priority: P${prioArg}` };
           } catch (e) {
             return { success: false, message: `Failed: ${e}` };
           }
@@ -234,10 +233,10 @@ export function CommandBar() {
   if (!showCommandBar) return null;
 
   return (
-    <Box borderStyle="single" borderColor={theme.colors.primary} paddingX={1}>
+    <Box borderStyle={glyphs.border('single')} borderColor={theme.colors.primary} paddingX={1}>
       <Text color={theme.colors.primary} bold>:</Text>
       <Text color={theme.colors.text}>{input}</Text>
-      <Text color={theme.colors.textDim}>█</Text>
+      <Text color={theme.colors.textDim}>{glyphs.barDone}</Text>
       <Box marginLeft={2}>
         <Text color={theme.colors.textDim}>
           {totalPages > 1 ? `pg ${currentPage}/${totalPages} | ` : ''}

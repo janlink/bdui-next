@@ -1,16 +1,15 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { hasActiveFilters, countActiveFilters } from '../utils/constants';
 
 export function FiltersBanner() {
   const filter = useBeadsStore(state => state.filter);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const searchQuery = useBeadsStore(state => state.searchQuery);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const getFilteredIssues = useBeadsStore(state => state.getFilteredIssues);
   const data = useBeadsStore(state => state.data);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   if (!hasActiveFilters(filter, searchQuery)) return null;
 
@@ -39,7 +38,7 @@ export function FiltersBanner() {
     <Box
       paddingX={1}
       marginBottom={1}
-      borderStyle="single"
+      borderStyle={glyphs.border('single')}
       borderColor={theme.colors.warning}
     >
       <Box gap={2}>

@@ -10,6 +10,9 @@ interface ThemeSelectorProps {
 export function ThemeSelector({ onClose }: ThemeSelectorProps) {
   const currentTheme = useBeadsStore(state => state.currentTheme);
   const setTheme = useBeadsStore(state => state.setTheme);
+  const colorDepth = useBeadsStore(state => state.colorDepth);
+  const glyphs = useBeadsStore(state => state.glyphs);
+  const activeTheme = useBeadsStore(state => state.theme);
 
   const themeNames = getThemeNames();
   const [selectedIndex, setSelectedIndex] = useState(
@@ -45,51 +48,52 @@ export function ThemeSelector({ onClose }: ThemeSelectorProps) {
   return (
     <Box
       flexDirection="column"
-      borderStyle="double"
-      borderColor="magenta"
+      borderStyle={glyphs.border('double')}
+      borderColor={activeTheme.colors.primary}
       padding={1}
       width={60}
-      backgroundColor="black"
+      backgroundColor={activeTheme.colors.surface}
     >
-      <Text bold color="magenta">
+      <Text {...activeTheme.ink.strong}>
         Select Theme
       </Text>
-      <Text dimColor>
-        ESC to cancel | ↑/↓ or k/j to navigate | Enter to select
+      <Text {...activeTheme.ink.faint}>
+        ESC to cancel | {glyphs.scrollUp}/{glyphs.scrollDown} or k/j to navigate | Enter to select
       </Text>
 
       <Box flexDirection="column" marginTop={1}>
         {themeNames.map((themeName, index) => {
           const isSelected = index === selectedIndex;
           const isCurrent = themeName === currentTheme;
-          const theme = getTheme(themeName);
+          // The swatches have to show what this depth can actually paint.
+          const theme = getTheme(themeName, colorDepth);
 
           return (
             <Box
               key={themeName}
-              borderStyle={isSelected ? 'single' : undefined}
-              borderColor={isSelected ? 'magenta' : undefined}
+              borderStyle={isSelected ? glyphs.border('single') : undefined}
+              borderColor={isSelected ? activeTheme.colors.primary : undefined}
               paddingX={1}
               marginBottom={1}
             >
               <Box flexDirection="column" width="100%">
                 <Box>
-                  <Text bold color={isSelected ? 'magenta' : 'white'}>
-                    {isSelected ? '▶ ' : '  '}
-                    {theme.name}
+                  <Text {...(isSelected ? activeTheme.ink.strong : activeTheme.ink.text)}>
+                    {isSelected ? `${glyphs.selectArrow} ` : '  '}
+                    {theme.label}
                   </Text>
                   {isCurrent && (
-                    <Text color="green"> (current)</Text>
+                    <Text color={activeTheme.colors.success}> (current)</Text>
                   )}
                 </Box>
 
                 {/* Color preview */}
                 <Box gap={1} marginTop={0}>
-                  <Text color={theme.colors.statusOpen}>■</Text>
-                  <Text color={theme.colors.statusInProgress}>■</Text>
-                  <Text color={theme.colors.statusBlocked}>■</Text>
-                  <Text color={theme.colors.statusClosed}>■</Text>
-                  <Text dimColor>|</Text>
+                  <Text color={theme.colors.statusOpen}>{glyphs.themeSwatch}</Text>
+                  <Text color={theme.colors.statusInProgress}>{glyphs.themeSwatch}</Text>
+                  <Text color={theme.colors.statusBlocked}>{glyphs.themeSwatch}</Text>
+                  <Text color={theme.colors.statusClosed}>{glyphs.themeSwatch}</Text>
+                  <Text {...activeTheme.ink.faint}>|</Text>
                   <Text color={theme.colors.typeEpic}>E</Text>
                   <Text color={theme.colors.typeFeature}>F</Text>
                   <Text color={theme.colors.typeBug}>B</Text>
@@ -102,8 +106,8 @@ export function ThemeSelector({ onClose }: ThemeSelectorProps) {
         })}
       </Box>
 
-      <Box marginTop={1} borderTop borderColor="gray" paddingTop={1}>
-        <Text dimColor>
+      <Box marginTop={1} borderTop borderColor={activeTheme.colors.border} paddingTop={1}>
+        <Text {...activeTheme.ink.faint}>
           Preview shows: Status colors | Issue type indicators
         </Text>
       </Box>

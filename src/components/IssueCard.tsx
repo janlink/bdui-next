@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import {
   PRIORITY_LABELS,
   getPriorityColor,
@@ -17,8 +16,8 @@ interface IssueCardProps {
 }
 
 export function IssueCard({ issue, isSelected = false, width = LAYOUT.columnWidth - 2 }: IssueCardProps) {
-  const currentTheme = useBeadsStore(state => state.currentTheme);
-  const theme = getTheme(currentTheme);
+  const glyphs = useBeadsStore(state => state.glyphs);
+  const theme = useBeadsStore(state => state.theme);
 
   const priorityColor = getPriorityColor(issue.priority, theme);
   const typeColor = getTypeColor(issue.issue_type, theme);
@@ -26,7 +25,7 @@ export function IssueCard({ issue, isSelected = false, width = LAYOUT.columnWidt
 
   return (
     <Box
-      borderStyle="round"
+      borderStyle={glyphs.border('round')}
       borderColor={isSelected ? theme.colors.primary : theme.colors.border}
       paddingX={1}
       flexDirection="column"
@@ -60,7 +59,7 @@ export function IssueCard({ issue, isSelected = false, width = LAYOUT.columnWidt
       {issue.labels && issue.labels.length > 0 && (
         <Box gap={1}>
           <Text color={theme.colors.textDim}>#</Text>
-          <Text color={theme.colors.secondary} wrap="truncate-end">{issue.labels.slice(0, 2).join(', ')}</Text>
+          <Text color={theme.colors.textDim} wrap="truncate-end">{issue.labels.slice(0, 2).join(', ')}</Text>
           {issue.labels.length > 2 && (
             <Text color={theme.colors.textDim}>+{issue.labels.length - 2}</Text>
           )}

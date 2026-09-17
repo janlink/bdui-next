@@ -9,6 +9,8 @@ export function FilterPanel() {
   const setFilter = useBeadsStore(state => state.setFilter);
   const clearFilters = useBeadsStore(state => state.clearFilters);
   const toggleFilter = useBeadsStore(state => state.toggleFilter);
+  const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const [selectedFilterType, setSelectedFilterType] = useState<'assignee' | 'tags' | 'priority' | 'status'>('assignee');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -141,14 +143,16 @@ export function FilterPanel() {
   return (
     <Box
       flexDirection="column"
-      borderStyle="double"
-      borderColor="cyan"
+      borderStyle={glyphs.border('double')}
+      borderColor={theme.colors.primary}
       paddingX={1}
       marginBottom={1}
     >
       <Box>
-        <Text bold color="cyan">Filters </Text>
-        <Text dimColor>(Tab to switch • ↑↓ navigate • Space to toggle • C to clear • ESC to close)</Text>
+        <Text {...theme.ink.strong}>Filters </Text>
+        <Text {...theme.ink.faint}>
+          (Tab to switch {glyphs.bullet} {glyphs.scrollUp}{glyphs.scrollDown} navigate {glyphs.bullet} Space to toggle {glyphs.bullet} C to clear {glyphs.bullet} ESC to close)
+        </Text>
       </Box>
 
       <Box marginTop={1} gap={2}>
@@ -156,66 +160,66 @@ export function FilterPanel() {
         <Box flexDirection="column" width={25}>
           <Text
             bold
-            color={selectedFilterType === 'assignee' ? 'cyan' : 'gray'}
+            color={selectedFilterType === 'assignee' ? theme.colors.primary : theme.colors.textFaint}
             underline={selectedFilterType === 'assignee'}
           >
             Assignee
           </Text>
           {uniqueAssignees.length === 0 ? (
-            <Text dimColor>  No assignees</Text>
+            <Text {...theme.ink.faint}>  No assignees</Text>
           ) : (
             uniqueAssignees.slice(0, 5).map((assignee, idx) => (
               <Box key={assignee}>
-                <Text color={selectedFilterType === 'assignee' && idx === selectedIndex ? 'cyan' : 'white'}>
-                  {selectedFilterType === 'assignee' && idx === selectedIndex ? '▶ ' : '  '}
-                  {isSelected('assignee', assignee) ? '☑ ' : '☐ '}
+                <Text color={selectedFilterType === 'assignee' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
+                  {selectedFilterType === 'assignee' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+                  {isSelected('assignee', assignee) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                   {assignee}
                 </Text>
               </Box>
             ))
           )}
-          {uniqueAssignees.length > 5 && <Text dimColor>  ... +{uniqueAssignees.length - 5} more</Text>}
+          {uniqueAssignees.length > 5 && <Text {...theme.ink.faint}>  ... +{uniqueAssignees.length - 5} more</Text>}
         </Box>
 
         {/* Tags Filter */}
         <Box flexDirection="column" width={25}>
           <Text
             bold
-            color={selectedFilterType === 'tags' ? 'cyan' : 'gray'}
+            color={selectedFilterType === 'tags' ? theme.colors.primary : theme.colors.textFaint}
             underline={selectedFilterType === 'tags'}
           >
             Tags
           </Text>
           {uniqueTags.length === 0 ? (
-            <Text dimColor>  No tags</Text>
+            <Text {...theme.ink.faint}>  No tags</Text>
           ) : (
             uniqueTags.slice(0, 5).map((tag, idx) => (
               <Box key={tag}>
-                <Text color={selectedFilterType === 'tags' && idx === selectedIndex ? 'cyan' : 'white'}>
-                  {selectedFilterType === 'tags' && idx === selectedIndex ? '▶ ' : '  '}
-                  {isSelected('tags', tag) ? '☑ ' : '☐ '}
+                <Text color={selectedFilterType === 'tags' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
+                  {selectedFilterType === 'tags' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+                  {isSelected('tags', tag) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                   {tag}
                 </Text>
               </Box>
             ))
           )}
-          {uniqueTags.length > 5 && <Text dimColor>  ... +{uniqueTags.length - 5} more</Text>}
+          {uniqueTags.length > 5 && <Text {...theme.ink.faint}>  ... +{uniqueTags.length - 5} more</Text>}
         </Box>
 
         {/* Priority Filter */}
         <Box flexDirection="column" width={30}>
           <Text
             bold
-            color={selectedFilterType === 'priority' ? 'cyan' : 'gray'}
+            color={selectedFilterType === 'priority' ? theme.colors.primary : theme.colors.textFaint}
             underline={selectedFilterType === 'priority'}
           >
             Priority
           </Text>
           {priorities.map((priority, idx) => (
             <Box key={priority}>
-              <Text color={selectedFilterType === 'priority' && idx === selectedIndex ? 'cyan' : 'white'}>
-                {selectedFilterType === 'priority' && idx === selectedIndex ? '▶ ' : '  '}
-                {isSelected('priority', priority) ? '☑ ' : '☐ '}
+              <Text color={selectedFilterType === 'priority' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
+                {selectedFilterType === 'priority' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+                {isSelected('priority', priority) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                 {getPriorityLabel(priority)}
               </Text>
             </Box>
@@ -226,16 +230,16 @@ export function FilterPanel() {
         <Box flexDirection="column" width={25}>
           <Text
             bold
-            color={selectedFilterType === 'status' ? 'cyan' : 'gray'}
+            color={selectedFilterType === 'status' ? theme.colors.primary : theme.colors.textFaint}
             underline={selectedFilterType === 'status'}
           >
             Status
           </Text>
           {statuses.map((status, idx) => (
             <Box key={status}>
-              <Text color={selectedFilterType === 'status' && idx === selectedIndex ? 'cyan' : 'white'}>
-                {selectedFilterType === 'status' && idx === selectedIndex ? '▶ ' : '  '}
-                {isSelected('status', status) ? '☑ ' : '☐ '}
+              <Text color={selectedFilterType === 'status' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
+                {selectedFilterType === 'status' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+                {isSelected('status', status) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                 {status}
               </Text>
             </Box>
@@ -244,14 +248,14 @@ export function FilterPanel() {
       </Box>
 
       {/* Active filters summary */}
-      <Box marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-        <Text dimColor>Active: </Text>
-        {filter.assignee && <Text color="cyan">{filter.assignee} </Text>}
-        {filter.tags && filter.tags.length > 0 && <Text color="cyan">{filter.tags.join(', ')} </Text>}
-        {filter.priority !== undefined && <Text color="cyan">P{filter.priority} </Text>}
-        {filter.status && <Text color="cyan">{filter.status} </Text>}
+      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
+        <Text {...theme.ink.faint}>Active: </Text>
+        {filter.assignee && <Text {...theme.ink.text}>{filter.assignee} </Text>}
+        {filter.tags && filter.tags.length > 0 && <Text {...theme.ink.text}>{filter.tags.join(', ')} </Text>}
+        {filter.priority !== undefined && <Text {...theme.ink.text}>P{filter.priority} </Text>}
+        {filter.status && <Text {...theme.ink.text}>{filter.status} </Text>}
         {!filter.assignee && (!filter.tags || filter.tags.length === 0) && filter.priority === undefined && !filter.status && (
-          <Text dimColor>None</Text>
+          <Text {...theme.ink.faint}>None</Text>
         )}
       </Box>
     </Box>

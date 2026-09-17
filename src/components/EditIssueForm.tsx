@@ -3,7 +3,6 @@ import { Box, Text, useInput } from 'ink';
 import { updateIssue, type UpdateIssueParams } from '../bd/commands';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
-import { getTheme } from '../themes/themes';
 import { VALIDATION, validateTitle, PRIORITY_LABELS, STATUS_LABELS } from '../utils/constants';
 
 interface EditIssueFormProps {
@@ -18,13 +17,13 @@ const EDITABLE_STATUSES = ['open', 'in_progress', 'blocked', 'closed'];
 
 export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps) {
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
+  const glyphs = useBeadsStore(state => state.glyphs);
   const terminalHeight = useBeadsStore(state => state.terminalHeight);
-  const currentTheme = useBeadsStore(state => state.currentTheme);
   const showToast = useBeadsStore(state => state.showToast);
   const showConfirm = useBeadsStore(state => state.showConfirm);
   const showConfirmDialog = useBeadsStore(state => state.showConfirmDialog);
   const addToUndoHistory = useBeadsStore(state => state.addToUndoHistory);
-  const theme = getTheme(currentTheme);
+  const theme = useBeadsStore(state => state.theme);
 
   const [currentField, setCurrentField] = useState<FormField>('title');
   const [formData, setFormData] = useState({
@@ -262,7 +261,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
       </Box>
 
       {/* Form Content */}
-      <Box flexDirection="column" padding={2} borderStyle="single" borderColor={primaryColor}>
+      <Box flexDirection="column" padding={2} borderStyle={glyphs.border('single')} borderColor={primaryColor}>
         {/* Title - with character count and change indicator */}
         <Box flexDirection="column" marginBottom={2}>
           <Box justifyContent="space-between">
@@ -277,7 +276,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
             </Text>
           </Box>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={
               currentField === 'title'
                 ? (titleValidation.valid || formData.title === '' ? primaryColor : theme.colors.error)
@@ -306,7 +305,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
               {isFieldChanged('status') && <Text color={theme.colors.warning}>[modified]</Text>}
             </Box>
             <Box
-              borderStyle="single"
+              borderStyle={glyphs.border('single')}
               borderColor={
                 currentField === 'status'
                   ? primaryColor
@@ -331,7 +330,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
               {isFieldChanged('priority') && <Text color={theme.colors.warning}>[modified]</Text>}
             </Box>
             <Box
-              borderStyle="single"
+              borderStyle={glyphs.border('single')}
               borderColor={
                 currentField === 'priority'
                   ? primaryColor
@@ -353,7 +352,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
           <Text color={theme.colors.textDim} bold>
             Type <Text color={theme.colors.textDim}>(read-only)</Text>
           </Text>
-          <Box borderStyle="single" borderColor={theme.colors.border} paddingX={1}>
+          <Box borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
             <Text color={theme.colors.textDim}>{issue.issue_type || 'task'}</Text>
           </Box>
         </Box>
@@ -372,7 +371,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
             </Text>
           </Box>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={
               currentField === 'description'
                 ? primaryColor
@@ -396,7 +395,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
             {isFieldChanged('assignee') && <Text color={theme.colors.warning}>[modified]</Text>}
           </Box>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={
               currentField === 'assignee'
                 ? primaryColor
@@ -420,7 +419,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
             {isFieldChanged('labels') && <Text color={theme.colors.warning}>[modified]</Text>}
           </Box>
           <Box
-            borderStyle="single"
+            borderStyle={glyphs.border('single')}
             borderColor={
               currentField === 'labels'
                 ? primaryColor
@@ -442,7 +441,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
 
         {/* Status messages */}
         {error && (
-          <Box marginTop={1} borderStyle="single" borderColor={theme.colors.error} paddingX={1}>
+          <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.error} paddingX={1}>
             <Text color={theme.colors.error} bold>Error: </Text>
             <Text color={theme.colors.error}>{error}</Text>
           </Box>
@@ -456,7 +455,7 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
       </Box>
 
       {/* Footer */}
-      <Box marginTop={1} borderStyle="single" borderColor={theme.colors.border} paddingX={1}>
+      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
         <Box justifyContent="space-between">
           <Text dimColor>
             Tab/Shift+Tab: Navigate | up/down: Change values | Enter: Submit | ESC: Cancel
