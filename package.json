@@ -26,9 +26,11 @@
     "build:windows": "bun build --compile --target=bun-windows-x64 ./src/index.tsx --outfile dist/bdui-windows-x64.exe"
   },
   "overrides": {
-    "string-width": "file:./patches/string-width-bun"
+    "string-width": "file:./patches/string-width-bun",
+    "chalk": "5.6.2"
   },
   "dependencies": {
+    "chalk": "^5.6.0",
     "ink": "^6.0.0",
     "node-notifier": "^10.0.1",
     "react": "^19.0.0",
