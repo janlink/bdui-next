@@ -7,7 +7,7 @@ import { ListHeader, ListRow } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
 import { Footer } from './Footer';
 import { Header, type HeaderStat } from './Header';
-import { listBudget, splitViewLayout } from '../utils/constants';
+import { listBudget, rowLayout, splitViewLayout } from '../utils/constants';
 import type { BeadsData } from '../types';
 
 interface TreeViewProps {
@@ -15,6 +15,8 @@ interface TreeViewProps {
   terminalWidth: number;
   terminalHeight: number;
 }
+
+const TRAILER_ROWS = 1;
 
 export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps) {
   const showDetails = useBeadsStore(state => state.showDetails);
@@ -31,7 +33,10 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   );
   const tree = useMemo(() => buildVisibleTree(data, visibleIds), [data, visibleIds]);
 
-  const budget = listBudget('tree', terminalHeight);
+  // One row under the list belongs to the trailer that counts what scrolled
+  // out of view; it is reserved even while the list fits, so folding a parent
+  // never moves the rows below it.
+  const budget = listBudget('tree', terminalHeight, TRAILER_ROWS);
   // Details replace the list only when the terminal is too narrow to split; there
   // the arrow keys scroll the panel, otherwise they navigate the list.
   const split = splitViewLayout(terminalWidth);
@@ -50,16 +55,12 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   const detailsAlongside = detailsVisible && split.fits;
   const listWidth = detailsAlongside ? split.listWidth : terminalWidth;
 
-  const scrolled = [
-    scrollOffset > 0 ? `${glyphs.scrollUp}${scrollOffset}` : '',
-    below > 0 ? `${glyphs.scrollDown}${below}` : '',
-  ].filter(Boolean).join(' ');
   const stats: HeaderStat[] = [
     { text: `${data.stats.total} issues` },
     { text: `${tree.length} roots` },
     { text: `${flatNodes.length === 0 ? 0 : selectedIndex + 1}/${flatNodes.length}`, strong: true },
-    ...(scrolled ? [{ text: scrolled }] : []),
   ];
+  const trailerIndent = (({ gutter, status, gap }) => gutter + status + gap)(rowLayout(listWidth, glyphs));
 
   return (
     <Box flexDirection="column" width="100%" height={terminalHeight}>
@@ -90,6 +91,16 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
                   width={listWidth}
                 />
               ))}
+              {(scrollOffset > 0 || below > 0) && (
+                <Box width={listWidth} justifyContent="space-between" paddingLeft={trailerIndent}>
+                  <Text {...theme.ink.rule}>
+                    {scrollOffset > 0 ? `${glyphs.scrollUp} ${scrollOffset}` : ''}
+                  </Text>
+                  <Text {...theme.ink.rule}>
+                    {below > 0 ? `${glyphs.scrollDown} ${below} more` : ''}
+                  </Text>
+                </Box>
+              )}
             </Box>
             {detailsAlongside && (
               <Box marginLeft={2} flexGrow={1} overflow="hidden">
