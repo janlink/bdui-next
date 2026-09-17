@@ -122,17 +122,61 @@ describe('row content', () => {
     }
   });
 
-  test('shows a progress bar of constant width whatever the progress', async () => {
-    const widths = new Set<number>();
+  test('ends a parent row with closed over total, whatever the progress', async () => {
     for (const closed of [0, 1, 2, 3]) {
       const parent = { ...nodes[0]!, issue: { ...nodes[0]!.issue, progress: { closed, total: 3, percent: 0 } } };
       const [line] = await renderLines(
         <ListRow node={parent} isSelected={false} theme={theme} glyphs={glyphs} width={70} />,
         70,
       );
-      widths.add(stringWidth(line!));
+      expect(stringWidth(line!)).toBe(70);
+      expect(line!.endsWith(`${closed}/3`)).toBe(true);
     }
-    expect([...widths]).toEqual([70]);
+  });
+
+  test('shows the fold caret for a parent and the status glyph for a leaf', async () => {
+    const lines = await renderLines(rows(-1, 70), 70);
+    expect([...lines[0]!][1]).toBe(glyphs.caretExpanded);
+    expect([...lines[1]!][1]).toBe(glyphs.caretExpanded);
+    expect([...lines[2]!][1]).toBe(glyphs.statusOpen);
+    expect([...lines[3]!][1]).toBe(glyphs.statusClosed);
+
+    const folded = { ...nodes[0]!, collapsed: true };
+    const [line] = await renderLines(
+      <ListRow node={folded} isSelected={false} theme={theme} glyphs={glyphs} width={70} />,
+      70,
+    );
+    expect([...line!][1]).toBe(glyphs.caretCollapsed);
+  });
+
+  test('spells the meta column out in words', async () => {
+    const lines = await renderLines(rows(-1, 70), 70);
+    expect(lines[1]!.endsWith('0/1')).toBe(true);
+    expect(lines[2]!.endsWith('P3')).toBe(true);
+    expect(lines[3]!.endsWith('closed')).toBe(true);
+
+    const leaf = nodes[2]!;
+    const variants: Array<[Partial<typeof leaf.issue>, string]> = [
+      [{ status: 'in_progress', displayStatus: 'in_progress' }, 'P3 in progress'],
+      [{ displayStatus: 'blocked' }, 'blocked'],
+      [{ status: 'deferred', displayStatus: 'other' }, 'deferred'],
+    ];
+    for (const [overrides, expected] of variants) {
+      const node = { ...leaf, issue: { ...leaf.issue, ...overrides } };
+      const [line] = await renderLines(
+        <ListRow node={node} isSelected={false} theme={theme} glyphs={glyphs} width={70} />,
+        70,
+      );
+      expect(line!.endsWith(expected)).toBe(true);
+    }
+  });
+
+  test('indents two cells per level and joins with a branch', async () => {
+    const lines = await renderLines(rows(-1, 70), 70);
+    const idStart = rowLayout(70, glyphs).gutter + rowLayout(70, glyphs).status + rowLayout(70, glyphs).gap;
+    expect(lines[0]!.slice(idStart)).toStartWith('bd-0001');
+    expect(lines[1]!.slice(idStart)).toStartWith(`${glyphs.treeLast}${glyphs.treeDash} bdui-1a8.23`);
+    expect(lines[2]!.slice(idStart)).toStartWith(`  ${glyphs.treeLast}${glyphs.treeDash} `);
   });
 });
 
@@ -142,7 +186,7 @@ describe('deep nesting', () => {
   const deep = {
     ...nodes[2]!,
     depth: 9,
-    prefix: '\u2502  '.repeat(9),
+    prefix: '\u2502 '.repeat(9),
     issue: { ...nodes[2]!.issue, id: 'bdui-platform-1a8.23.14.7.2' },
   };
 

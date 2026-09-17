@@ -11,16 +11,16 @@ import {
 const fancy = getGlyphs('fancy');
 
 describe('row grid', () => {
-  test('spends 42 columns before the title', () => {
-    expect(ROW_FIXED_COLUMNS).toBe(42);
+  test('spends 34 columns before the title', () => {
+    expect(ROW_FIXED_COLUMNS).toBe(34);
   });
 
   test.each([
-    [60, 18],
-    [100, 58],
-    [70, 28],
-    [83, 41],
-  ])('leaves the title %i - 42 = %i columns', (width, title) => {
+    [60, 26],
+    [100, 66],
+    [70, 36],
+    [83, 49],
+  ])('leaves the title %i - 34 = %i columns', (width, title) => {
     expect(rowLayout(width, fancy).title).toBe(title);
   });
 
