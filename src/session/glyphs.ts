@@ -50,6 +50,8 @@ export interface GlyphSet {
   themeSwatch: string;
   bullet: string;
   middot: string;
+  /** The dot before the live/stale word in the header. */
+  indicator: string;
 
   // Ink draws its own frames from cli-boxes, so the tier has to map those too.
   border: (style: BorderStyleName) => BorderStyleName;
@@ -86,6 +88,7 @@ const FANCY: GlyphSet = {
   themeSwatch: '■',
   bullet: '•',
   middot: '·',
+  indicator: '●',
   border: style => style,
 };
 
@@ -120,6 +123,7 @@ const SAFE: GlyphSet = {
   themeSwatch: '█',
   bullet: '•',
   middot: '·',
+  indicator: '■',
   // Rounded corners are not in CP437; single and double are.
   border: style => (style === 'round' ? 'single' : style),
 };
@@ -155,6 +159,7 @@ const ASCII: GlyphSet = {
   themeSwatch: '#',
   bullet: '*',
   middot: '.',
+  indicator: '*',
   border: () => 'classic',
 };
 

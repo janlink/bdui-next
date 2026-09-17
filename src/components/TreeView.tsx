@@ -6,6 +6,7 @@ import { useTreeNavigation } from './useTreeNavigation';
 import { ListHeader, ListRow } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
 import { Footer } from './Footer';
+import { Header, type HeaderStat } from './Header';
 import { listBudget, splitViewLayout } from '../utils/constants';
 import type { BeadsData } from '../types';
 
@@ -49,22 +50,20 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   const detailsAlongside = detailsVisible && split.fits;
   const listWidth = detailsAlongside ? split.listWidth : terminalWidth;
 
+  const scrolled = [
+    scrollOffset > 0 ? `${glyphs.scrollUp}${scrollOffset}` : '',
+    below > 0 ? `${glyphs.scrollDown}${below}` : '',
+  ].filter(Boolean).join(' ');
+  const stats: HeaderStat[] = [
+    { text: `${data.stats.total} issues` },
+    { text: `${tree.length} roots` },
+    { text: `${flatNodes.length === 0 ? 0 : selectedIndex + 1}/${flatNodes.length}`, strong: true },
+    ...(scrolled ? [{ text: scrolled }] : []),
+  ];
+
   return (
     <Box flexDirection="column" width="100%" height={terminalHeight}>
-      <Box justifyContent="space-between">
-        <Text {...theme.ink.strong}>Tree</Text>
-        <Box gap={2}>
-          <Text {...theme.ink.faint}>Total: <Text {...theme.ink.dim}>{data.stats.total}</Text></Text>
-          <Text {...theme.ink.faint}>Roots: <Text {...theme.ink.dim}>{tree.length}</Text></Text>
-          <Text {...theme.ink.dim}>
-            {flatNodes.length === 0 ? 0 : selectedIndex + 1}/{flatNodes.length}
-          </Text>
-          <Text {...theme.ink.faint}>
-            {scrollOffset > 0 ? `${glyphs.scrollUp}${scrollOffset} ` : ''}
-            {below > 0 ? `${glyphs.scrollDown}${below}` : ''}
-          </Text>
-        </Box>
-      </Box>
+      <Header view="Tree" stats={stats} width={terminalWidth} />
       <ListHeader theme={theme} glyphs={glyphs} width={listWidth} />
 
       <Box flexGrow={1} overflow="hidden">
