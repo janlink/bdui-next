@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text } from 'ink';
 import stringWidth from 'string-width';
-import { getTypeColor, getStatusColor, getPriorityColor, rowLayout } from '../utils/constants';
+import { ID_COLUMN_MAX, ROW_GRID, getTypeColor, getStatusColor, getPriorityColor, rowLayout } from '../utils/constants';
 import { fitFromRight, fitToWidth, keepLastCells, padEndCells, padStartCells } from '../utils/cells';
 import type { GlyphSet } from '../session/glyphs';
 import type { Ladder, Theme, TextStyle } from '../themes/themes';
@@ -19,6 +19,8 @@ interface RowProps {
   theme: Theme;
   glyphs: GlyphSet;
   width: number;
+  /** The id column measured over the whole tree; the grid's floor when absent. */
+  idWidth?: number;
 }
 
 // Blocked is a presentation status, so it wins over the raw one.
@@ -67,18 +69,36 @@ export function rowMeta(issue: Issue, theme: Theme, ink: Ladder): RowMeta {
   }
 }
 
-function branchOf(node: FlatNode, glyphs: GlyphSet): string {
+export function branchOf(node: FlatNode, glyphs: GlyphSet): string {
   const stem = node.prefix.replaceAll('│', glyphs.treeVertical);
   if (node.depth === 0) return stem;
   const join = node.isLast ? glyphs.treeLast : glyphs.treeBranch;
   return `${stem}${join}${glyphs.treeDash} `;
 }
 
+/** Cells the title keeps before the id column stops growing at its expense. */
+const TITLE_FLOOR = 26;
+
+/**
+ * The id column is measured once over the whole tree, not the window, so it
+ * never jumps while scrolling: wide enough for the deepest branch plus its id
+ * and one cell of air, but never past ID_COLUMN_MAX and never below the grid's
+ * floor, and it stops growing where the title would drop under TITLE_FLOOR.
+ */
+export function idColumnWidth(nodes: readonly FlatNode[], glyphs: GlyphSet, width: number): number {
+  let needed: number = ROW_GRID.id;
+  for (const node of nodes) {
+    needed = Math.max(needed, stringWidth(branchOf(node, glyphs)) + stringWidth(node.issue.id) + 1);
+  }
+  const titleFloor = width - (rowLayout(width, glyphs).fixed - ROW_GRID.id) - TITLE_FLOOR;
+  return Math.max(ROW_GRID.id, Math.min(needed, ID_COLUMN_MAX, titleFloor));
+}
+
 const NO_SELECTION = {} as const;
 
-function ListRowImpl({ node, isSelected, theme, glyphs, width }: RowProps) {
+function ListRowImpl({ node, isSelected, theme, glyphs, width, idWidth }: RowProps) {
   const { issue } = node;
-  const grid = rowLayout(width, glyphs);
+  const grid = rowLayout(width, glyphs, idWidth);
   const ink = isSelected ? theme.inkSelected : theme.ink;
   // With no colour left to spend, the gutter is the only channel the selection
   // can still use.
@@ -136,12 +156,13 @@ interface HeaderProps {
   theme: Theme;
   glyphs: GlyphSet;
   width: number;
+  idWidth?: number;
 }
 
 // The header reads the same grid the row does; deriving its edges separately is
 // what put it one cell beside the titles before.
-export function ListHeader({ theme, glyphs, width }: HeaderProps) {
-  const grid = rowLayout(width, glyphs);
+export function ListHeader({ theme, glyphs, width, idWidth }: HeaderProps) {
+  const grid = rowLayout(width, glyphs, idWidth);
   return (
     <Text {...theme.ink.faint} wrap="truncate-end">
       {' '.repeat(grid.gutter + grid.status + grid.gap)}

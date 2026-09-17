@@ -63,21 +63,25 @@ export interface RowLayout {
   title: number;
 }
 
+/** Cells the id column may grow to when a tree needs more than the grid's floor. */
+export const ID_COLUMN_MAX = 24;
+
 /**
  * The grid in cells rather than characters, so that a gutter or status glyph the
- * terminal draws two cells wide cannot shift the ID column.
+ * terminal draws two cells wide cannot shift the ID column. `idWidth` is the
+ * column a view measured for its whole tree; the grid's floor when none is given.
  */
-export function rowLayout(width: number, glyphs: GlyphSet): RowLayout {
+export function rowLayout(width: number, glyphs: GlyphSet, idWidth: number = ROW_GRID.id): RowLayout {
   const gutter = cellWidthOf([glyphs.gutter]);
   // Parents show a caret where leaves show their status, so both sets size
   // the column.
   const status = cellWidthOf([...statusGlyphsOf(glyphs), glyphs.caretCollapsed, glyphs.caretExpanded]);
-  const fixed = gutter + status + ROW_GRID.gap + ROW_GRID.id + ROW_GRID.meta;
+  const fixed = gutter + status + ROW_GRID.gap + idWidth + ROW_GRID.meta;
   return {
     gutter,
     status,
     gap: ROW_GRID.gap,
-    id: ROW_GRID.id,
+    id: idWidth,
     meta: ROW_GRID.meta,
     fixed,
     title: Math.max(0, width - fixed),
