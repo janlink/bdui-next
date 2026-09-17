@@ -56,7 +56,6 @@ export interface ThemeColors {
   primary: string;
   border: string;
   surface: string;
-  surfaceSel: string;
 
   success: string;
   error: string;
@@ -198,7 +197,6 @@ function theme256(name: string, palette: Palette): Theme {
       primary: c(open),
       border: c(236),
       surface: c(234),
-      surfaceSel: c(237),
 
       success: c(closed),
       error: c(blocked),
@@ -309,7 +307,6 @@ function theme16(name: string, palette: Palette16, label: string): Theme {
       // Painting a surface would fight the terminal's own background, which the
       // user owns at this depth; the selected row inverts instead.
       surface: '',
-      surfaceSel: '',
 
       success: palette.success,
       error: palette.error,
@@ -326,7 +323,7 @@ const COLOR_KEYS = [
   'statusOther', 'priorityCritical', 'priorityHigh', 'priorityMedium', 'priorityLow',
   'priorityLowest', 'typeEpic', 'typeFeature', 'typeBug', 'typeTask', 'typeChore',
   'typeDecision', 'typeOther', 'textStrong', 'text', 'textDim', 'textFaint', 'rule',
-  'primary', 'border', 'surface', 'surfaceSel', 'success', 'error', 'warning',
+  'primary', 'border', 'surface', 'success', 'error', 'warning',
 ] as const satisfies readonly (keyof ThemeColors)[];
 
 function themeNone(name: string, label: string): Theme {

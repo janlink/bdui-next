@@ -19,6 +19,8 @@ export const LAYOUT = {
 } as const;
 
 // Space between the list and the detail panel; mirrors the panel Box marginLeft.
+// The panel's border stands on its own first cell, so the rules above and below
+// fork one cell past the list.
 const SPLIT_VIEW_GAP = 1;
 
 // Row-oriented views (Tree, Graph) show the detail panel beside the list when the
@@ -94,7 +96,7 @@ export type ListView = 'tree' | 'graph' | 'memories' | 'kanban' | 'stats';
 // detail panel. One table instead of an offset per call site, so a changed
 // header cannot leave a view one row short.
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
-  tree: { body: 4, panel: 4 },
+  tree: { body: 4, panel: 3 },
   graph: { body: 8, panel: 6 },
   memories: { body: 7, panel: 7 },
   kanban: { body: LAYOUT.uiOverhead, panel: 4 },

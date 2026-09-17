@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
-import { surfaceOf } from '../session/surface';
 import { fitToWidth, padEndCells } from '../utils/cells';
 import {
   PRIORITY_LABELS,
@@ -101,6 +100,9 @@ interface DetailPanelProps {
   // Side-by-side layouts navigate the list with the arrow keys, so the panel
   // there pages its description on PgUp/PgDn only.
   enablePaging?: boolean;
+  // A hosted panel sits in a frame its view draws, which names the issue over
+  // it and the keys under it; the panel then draws neither border nor those rows.
+  chrome?: 'own' | 'hosted';
 }
 
 interface DetailPagingOverlays {
@@ -117,8 +119,8 @@ export function detailPagingIsActive(overlays: DetailPagingOverlays): boolean {
   return !Object.values(overlays).some(Boolean);
 }
 
-// The left border and the padding on both sides.
-const FRAME_WIDTH = 3;
+// The padding on both sides, and the left border where the panel draws its own.
+const FRAME_WIDTH = { own: 3, hosted: 2 } as const;
 const LABEL_WIDTH = 10;
 const SUBTASKS_SHOWN = 5;
 // Rows the description gets when no height is known.
@@ -141,23 +143,25 @@ function Frame({
   height,
   theme,
   glyphs,
+  hosted,
   children,
-}: React.PropsWithChildren<{ width: number; height?: number; theme: Theme; glyphs: GlyphSet }>) {
-  const surface = useBeadsStore(state => state.surface);
+}: React.PropsWithChildren<{ width: number; height?: number; theme: Theme; glyphs: GlyphSet; hosted: boolean }>) {
+  const border = hosted ? {} : {
+    borderStyle: glyphs.border('single'),
+    borderLeft: true,
+    borderTop: false,
+    borderRight: false,
+    borderBottom: false,
+    borderLeftColor: theme.colors.border,
+  };
   return (
     <Box
       flexDirection="column"
       width={width}
       height={height}
       flexShrink={0}
-      borderStyle={glyphs.border('single')}
-      borderLeft
-      borderTop={false}
-      borderRight={false}
-      borderBottom={false}
-      borderLeftColor={theme.colors.border}
+      {...border}
       paddingX={1}
-      backgroundColor={surfaceOf(theme, surface)}
       overflow="hidden"
     >
       <Box flexDirection="column" flexShrink={0}>
@@ -173,7 +177,14 @@ function Frame({
  * line cut to the panel's width, so the rows above the description are
  * countable and the description gets exactly what is left.
  */
-export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePaging = true }: DetailPanelProps) {
+export function DetailPanel({
+  issue,
+  maxHeight,
+  availableWidth = 50,
+  enablePaging = true,
+  chrome = 'own',
+}: DetailPanelProps) {
+  const hosted = chrome === 'hosted';
   const pagingIsActive = useBeadsStore(state => detailPagingIsActive({
     showSearch: state.showSearch,
     showFilter: state.showFilter,
@@ -190,7 +201,7 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
   const [descriptionOffset, setDescriptionOffset] = useState(0);
   useEffect(() => setDescriptionOffset(0), [issue?.id]);
 
-  const inner = Math.max(1, availableWidth - FRAME_WIDTH);
+  const inner = Math.max(1, availableWidth - FRAME_WIDTH[chrome]);
   const valueWidth = Math.max(1, inner - LABEL_WIDTH);
   const ink = theme.ink;
 
@@ -249,8 +260,9 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
     : 2 + Math.min(children.length, SUBTASKS_SHOWN) + (children.length > SUBTASKS_SHOWN ? 1 : 0);
   const stampRows = 1 + 2 + (issue?.closed_at ? 1 : 0);
   const description = issue?.description || '';
-  // Title, id, blank, grid, rule, [description], subtasks, stamps, keys.
-  const fixedRows = titleLines.length + 2 + grid.length + (description ? 1 : 0) + subtaskRows + stampRows + 1;
+  // Title, [id], blank, grid, rule, [description], subtasks, stamps, [keys].
+  const fixedRows = titleLines.length + (hosted ? 1 : 2) + grid.length + (description ? 1 : 0)
+    + subtaskRows + stampRows + (hosted ? 0 : 1);
   const room = maxHeight === undefined
     ? DEFAULT_DESCRIPTION_ROWS
     : Math.max(1, maxHeight - fixedRows);
@@ -272,7 +284,7 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
 
   if (!issue) {
     return (
-      <Frame width={availableWidth} height={maxHeight} theme={theme} glyphs={glyphs}>
+      <Frame width={availableWidth} height={maxHeight} theme={theme} glyphs={glyphs} hosted={hosted}>
         <Text {...ink.dim} italic>No issue selected</Text>
         <Text {...ink.faint}>Select an issue with the arrow keys</Text>
       </Frame>
@@ -288,11 +300,11 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
   );
 
   return (
-    <Frame width={availableWidth} height={maxHeight} theme={theme} glyphs={glyphs}>
+    <Frame width={availableWidth} height={maxHeight} theme={theme} glyphs={glyphs} hosted={hosted}>
       {titleLines.map((line, index) => (
         <Text key={index} bold {...ink.strong} wrap="truncate-end">{line}</Text>
       ))}
-      <Text {...ink.dim} wrap="truncate-end">{fitToWidth(issue.id, inner, glyphs.ellipsis)}</Text>
+      {hosted ? null : <Text {...ink.dim} wrap="truncate-end">{fitToWidth(issue.id, inner, glyphs.ellipsis)}</Text>}
       <Text> </Text>
 
       {grid.map(row => (
@@ -354,11 +366,13 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
         {issue.closed_at ? stamp('closed', issue.closed_at) : null}
       </Box>
 
-      <Text wrap="truncate-end">
-        <Text {...ink.strong}>e</Text><Text {...ink.faint}> edit  </Text>
-        <Text {...ink.strong}>x</Text><Text {...ink.faint}> export  </Text>
-        <Text {...ink.strong}>esc</Text><Text {...ink.faint}> close</Text>
-      </Text>
+      {hosted ? null : (
+        <Text wrap="truncate-end">
+          <Text {...ink.strong}>e</Text><Text {...ink.faint}> edit  </Text>
+          <Text {...ink.strong}>x</Text><Text {...ink.faint}> export  </Text>
+          <Text {...ink.strong}>esc</Text><Text {...ink.faint}> close</Text>
+        </Text>
+      )}
     </Frame>
   );
 }

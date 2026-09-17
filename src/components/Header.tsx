@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, Text } from 'ink';
-import stringWidth from 'string-width';
+import { Box } from 'ink';
 import { useBeadsStore, type LiveState } from '../state/store';
-import { surfaceOf } from '../session/surface';
 import { fitToWidth } from '../utils/cells';
+import { Rule, segmentCells, words, type Segment } from './Rule';
 import type { Theme } from '../themes/themes';
 
 export interface HeaderStat {
@@ -12,19 +11,25 @@ export interface HeaderStat {
   strong?: boolean;
 }
 
+export interface HeaderPanel {
+  width: number;
+  title: string;
+}
+
 interface HeaderProps {
   view: string;
   stats: HeaderStat[];
   width: number;
+  /** A detail panel beside the view: the rule forks at its border and names the issue over it. */
+  panel?: HeaderPanel;
 }
 
 export const HEADER_HEIGHT = 1;
 
-const PADDING = 1;
-const GAP = 2;
 // A workspace name cut shorter than this says nothing; it is dropped instead.
 const MIN_WORKSPACE_CELLS = 6;
-const BRAND = 'bdui';
+// A word set into the rule costs its cells, a pad on each side and one cell of line.
+const WORD_COST = 3;
 
 const LIVE_WORDS: Record<LiveState, string> = {
   loading: 'loading',
@@ -38,72 +43,66 @@ function liveColor(state: LiveState, theme: Theme): string {
   return theme.colors.textFaint;
 }
 
-function cellsOf(parts: string[]): number {
-  return parts.reduce((total, part) => total + stringWidth(part), 0) + GAP * Math.max(0, parts.length - 1);
-}
-
 /**
- * One row above every view: who draws, which workspace, which view; then the
- * view's counts and whether the data is still fresh. When the row runs out of
- * room the workspace shrinks first, then goes, then the counts leave from the
- * left; the view name and the freshness stay to the last cell.
+ * The rule above the view: which view, which workspace; then the view's counts
+ * and whether the data is still fresh. When the row runs out of room the
+ * workspace shrinks first, then goes, then the counts leave from the left; the
+ * view name and the freshness stay to the last cell. Beside a detail panel the
+ * rule forks at the panel's border and carries the issue id over the panel.
  */
-export function Header({ view, stats, width }: HeaderProps) {
+export function Header({ view, stats, width, panel }: HeaderProps) {
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
-  const surface = useBeadsStore(state => state.surface);
   const workspaceName = useBeadsStore(state => state.workspaceName);
   const liveState = useBeadsStore(state => state.liveState);
 
-  const inner = Math.max(0, width - PADDING * 2);
-  const gap = ' '.repeat(GAP);
-  const live = `${glyphs.indicator} ${LIVE_WORDS[liveState]}`;
-  const leftMinimum = cellsOf([BRAND, view]);
+  const listWidth = panel ? width - panel.width - 1 : width;
+  const live: Segment = {
+    text: `${glyphs.indicator} ${LIVE_WORDS[liveState]}`,
+    style: { color: liveColor(liveState, theme) },
+  };
+  const rightOf = (shown: HeaderStat[]): Segment[] => words([[
+    ...shown.flatMap(stat => [
+      { text: stat.text, style: stat.strong ? theme.ink.dim : theme.ink.faint },
+      { text: ` ${glyphs.middot} ` },
+    ]),
+    live,
+  ]], glyphs);
 
+  const viewWord: Segment = { text: view, style: theme.ink.strong };
+  const leftMinimum = segmentCells(words([[viewWord]], glyphs));
   let shownStats = stats;
-  let rightWidth = cellsOf([...shownStats.map(stat => stat.text), live]);
-  while (shownStats.length > 0 && leftMinimum + GAP + rightWidth > inner) {
+  let right = rightOf(shownStats);
+  while (shownStats.length > 0 && leftMinimum + segmentCells(right) > listWidth) {
     shownStats = shownStats.slice(1);
-    rightWidth = cellsOf([...shownStats.map(stat => stat.text), live]);
+    right = rightOf(shownStats);
   }
 
-  let workspace = '';
+  const left: Segment[][] = [[viewWord]];
   if (workspaceName) {
-    const room = inner - rightWidth - GAP - cellsOf([BRAND, '', glyphs.treeVertical, view]);
-    workspace = room >= MIN_WORKSPACE_CELLS ? fitToWidth(workspaceName, room, glyphs.ellipsis) : '';
+    const room = listWidth - leftMinimum - segmentCells(right) - WORD_COST;
+    if (room >= MIN_WORKSPACE_CELLS) {
+      left.push([{ text: fitToWidth(workspaceName, room, glyphs.ellipsis), style: theme.ink.dim }]);
+    }
   }
 
   return (
-    <Box
-      width={width}
-      height={HEADER_HEIGHT}
-      paddingX={PADDING}
-      justifyContent="space-between"
-      backgroundColor={surfaceOf(theme, surface)}
-      overflow="hidden"
-    >
-      <Text wrap="truncate-end">
-        <Text bold color={theme.colors.primary}>{BRAND}</Text>
-        {workspace ? (
-          <>
-            {gap}
-            <Text {...theme.ink.dim}>{workspace}</Text>
-            {gap}
-            <Text {...theme.ink.rule}>{glyphs.treeVertical}</Text>
-          </>
-        ) : null}
-        {gap}
-        <Text {...theme.ink.strong}>{view}</Text>
-      </Text>
-      <Text wrap="truncate-end">
-        {shownStats.map((stat, index) => (
-          <Text key={index} {...(stat.strong ? theme.ink.dim : theme.ink.faint)}>
-            {stat.text}
-            {gap}
-          </Text>
-        ))}
-        <Text color={liveColor(liveState, theme)}>{live}</Text>
-      </Text>
+    <Box width={width} height={HEADER_HEIGHT} flexShrink={0} overflow="hidden">
+      <Rule width={listWidth} left={words(left, glyphs)} right={right} theme={theme} glyphs={glyphs} />
+      {panel && (
+        <Rule
+          width={panel.width + 1}
+          left={[
+            { text: `${glyphs.rule}${glyphs.ruleDown}` },
+            ...words([[{
+              text: fitToWidth(panel.title, Math.max(1, panel.width - 1 - WORD_COST - 1), glyphs.ellipsis),
+              style: theme.ink.strong,
+            }]], glyphs),
+          ]}
+          theme={theme}
+          glyphs={glyphs}
+        />
+      )}
     </Box>
   );
 }

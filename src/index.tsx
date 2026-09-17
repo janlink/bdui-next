@@ -6,7 +6,6 @@ import { handleCliArgs } from './cli';
 import { applyAmbiguousWidth, resolveAmbiguousWidth } from './session/ambiguous';
 import { applyColorDepth, resolveColorDepth } from './session/colors';
 import { resolveGlyphTier } from './session/glyphs';
-import { resolveSurface } from './session/surface';
 import { useBeadsStore } from './state/store';
 
 if (handleCliArgs(process.argv.slice(2))) process.exit(0);
@@ -22,7 +21,6 @@ applyColorDepth(colorDepth);
 useBeadsStore.getState().setSessionAxes({
   colorDepth,
   glyphTier: resolveGlyphTier(),
-  surface: resolveSurface(),
 });
 
 const { unmount, waitUntilExit } = render(<App />);
