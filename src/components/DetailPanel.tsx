@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
+import { fitToWidth } from '../utils/cells';
 import {
   PRIORITY_LABELS,
   getPriorityColor,
@@ -166,7 +167,9 @@ export function DetailPanel({ issue, maxHeight, availableWidth = 50, enablePagin
     >
       {/* Header */}
       <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.primary} wrap="truncate-end">{issue.title}</Text>
+        <Text bold color={theme.colors.primary}>
+          {fitToWidth(issue.title, descriptionWidth, glyphs.ellipsis)}
+        </Text>
         <Text color={theme.colors.textDim}>{issue.id}</Text>
       </Box>
 
