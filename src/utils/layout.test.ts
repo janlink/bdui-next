@@ -40,8 +40,8 @@ describe('split view', () => {
   });
 
   test.each([
-    [122, 70, 50],
-    [140, 83, 55],
+    [107, 70, 36],
+    [140, 99, 40],
   ])('at %i columns splits into a %i list and a %i panel', (width, list, panel) => {
     const split = splitViewLayout(width);
     expect(split.fits).toBe(true);

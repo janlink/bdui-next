@@ -3,6 +3,7 @@ import React from 'react';
 import { Readable, Writable } from 'node:stream';
 import { render } from 'ink';
 import { normalizeBeads } from '../bd/parser';
+import { getGlyphs } from '../session/glyphs';
 import { useBeadsStore } from '../state/store';
 import { Board } from './Board';
 import { DetailPanel } from './DetailPanel';
@@ -86,7 +87,7 @@ test('leaf card has no numeric progress', async () => {
   expect(output).not.toMatch(/\d+\s*\/\s*\d+/);
 });
 
-test('single-child progress uses singular copy in details', async () => {
+test('single-child progress fills the bar and counts one of one', async () => {
   const singleChildData = normalizeBeads([
     { id: 'single-parent', title: 'Single parent', status: 'open', issue_type: 'epic', priority: 1 },
     { id: 'single-child', title: 'Done', status: 'closed', issue_type: 'task', priority: 2,
@@ -94,8 +95,8 @@ test('single-child progress uses singular copy in details', async () => {
   ]);
 
   const output = await renderText(<DetailPanel issue={singleChildData.byId.get('single-parent')!} />);
-  expect(output).toContain('1/1 child closed (100%)');
-  expect(output).not.toContain('1/1 children closed');
+  expect(output).toContain('100 %');
+  expect(output).toContain('subtasks 1/1');
 });
 
 test('details replace the board at the minimum supported width', async () => {
@@ -103,7 +104,7 @@ test('details replace the board at the minimum supported width', async () => {
   const output = await renderText(<Board />, 60, 30);
 
   expect(output).toMatch(/parent work/i);
-  expect(output).toContain('Type:');
+  expect(output).toContain('esc close');
   expect(output).not.toContain('Terminal too narrow for detail panel');
 });
 
@@ -112,7 +113,7 @@ test('details preserve board context when both fit', async () => {
   const output = await renderText(<Board />, 250, 30);
 
   expect(output).toMatch(/Open \(2\)/);
-  expect(output).toContain('Type:');
+  expect(output).toContain('esc close');
 });
 
 test('minimum-height details show one complete line and paging control', async () => {
@@ -122,23 +123,33 @@ test('minimum-height details show one complete line and paging control', async (
   }]);
 
   const output = await renderText(<DetailPanel issue={data.byId.get('short-panel')!} maxHeight={10} />, 60, 10);
-  expect(output).toContain('A'.repeat(46));
-  expect(output).not.toContain('A'.repeat(47));
+  expect(output).toContain('A'.repeat(47));
   expect(output).not.toContain('SECOND PAGE LINE');
   expect(output).toContain('↓ more');
 });
 
-test('long wide title stays on one row without reducing the description page', async () => {
+// 57 inner cells hold 28 wide characters, so 40 of them wrap onto a second
+// title row; with two title rows the fixed rows come to twelve.
+test('a wide title wraps onto a second row and the description keeps its rows', async () => {
   const data = normalizeBeads([{
     id: 'long-title', title: '界'.repeat(40), status: 'open', issue_type: 'bug', priority: 1,
     description: 'FIRST VISIBLE ROW\nSECOND VISIBLE ROW',
   }]);
 
-  const output = await renderText(<DetailPanel issue={data.byId.get('long-title')!} maxHeight={11} />, 60, 11);
+  const output = await renderText(<DetailPanel issue={data.byId.get('long-title')!} maxHeight={14} availableWidth={60} />, 60, 14);
+  expect(output).toMatch(/界{28}\n[^\n]*界{12}\n[^\n]*long-title/);
   expect(output).toContain('FIRST VISIBLE ROW');
   expect(output).toContain('SECOND VISIBLE ROW');
-  expect(output).toContain('…');
-  expect(output).not.toContain('界'.repeat(40));
+  expect(output).not.toContain('↓ more');
+});
+
+test('a title past three rows is cut with the ellipsis on the third', async () => {
+  const data = normalizeBeads([{
+    id: 'longer-title', title: '界'.repeat(100), status: 'open', issue_type: 'bug', priority: 1,
+  }]);
+
+  const output = await renderText(<DetailPanel issue={data.byId.get('longer-title')!} maxHeight={14} availableWidth={60} />, 60, 14);
+  expect(output).toMatch(/界{28}\n[^\n]*界{28}\n[^\n]*界{28}…\n[^\n]*longer-title/);
 });
 
 test('roomy full-width details show more than eight wrapped lines without paging', async () => {
@@ -153,23 +164,23 @@ test('roomy full-width details show more than eight wrapped lines without paging
   useBeadsStore.setState({
     data,
     previousIssues: new Map(data.byId),
-    terminalWidth: 120,
+    terminalWidth: 80,
     terminalHeight: 40,
     showDetails: true,
   });
 
-  const output = await renderText(<Board />, 120, 40);
+  const output = await renderText(<Board />, 80, 40);
   expect(output).toContain('END-10');
   expect(output).not.toContain('↓ more');
   expect(output).not.toContain('↑ previous');
 });
 
 test('all detail layouts use their actual available width', async () => {
-  // Rows fit the narrowest actual panel (Tree/Graph side-by-side ~55 cols) but
-  // would wrap against a stale hardcoded 50, so paging is the regression signal.
+  // Rows fit the 37 inner cells of the 40-wide side panel but would wrap
+  // against anything narrower, so paging is the regression signal.
   const description = Array.from(
     { length: 14 },
-    (_, index) => `ROW ${String(index + 1).padStart(2, '0')} ${'x'.repeat(35)} END-${index + 1}`,
+    (_, index) => `ROW ${String(index + 1).padStart(2, '0')} ${'x'.repeat(20)} END-${index + 1}`,
   ).join('\n');
   const data = normalizeBeads([
     { id: 'layout-parent', title: 'Layout parent', status: 'open', issue_type: 'epic', priority: 1,
@@ -199,11 +210,14 @@ test('all detail layouts use their actual available width', async () => {
 });
 
 test('detail paging starts exactly one row past each visible layout boundary', async () => {
+  // The panel spends fifteen rows around the description here: one title row,
+  // id, blank, four grid rows, the rule, three subtask rows, three stamp rows
+  // and the key hints. The rest of each layout's panel height is the page.
   const layouts = [
-    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 120, pageRows: 18 },
-    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 18 },
-    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 17 },
-    { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 16 },
+    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 80, pageRows: 11 },
+    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 11 },
+    { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 10 },
+    { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 9 },
   ];
 
   for (const layout of layouts) {
@@ -243,6 +257,11 @@ test('detail paging starts exactly one row past each visible layout boundary', a
   }
 });
 
+// The panel lists the children with their titles, so a child's title no longer
+// proves the list is there. These are what only the list rows draw: the tree's
+// priority gutter and the graph's type/status/priority tail.
+const LIST_MARKERS = { tree: getGlyphs('fancy').gutter, graph: 'task open P2' } as const;
+
 test('tree and graph show the list beside details when wide enough', async () => {
   for (const viewMode of ['tree', 'graph'] as const) {
     useBeadsStore.setState({
@@ -256,9 +275,9 @@ test('tree and graph show the list beside details when wide enough', async () =>
 
     const output = await renderText(<Board />, 140, 30);
     // Detail panel is present...
-    expect(output).toContain('Type:');
-    // ...alongside the list, whose non-selected rows only the list renders.
-    expect(output).toMatch(/not done/i);
+    expect(output).toContain('esc close');
+    // ...alongside the list.
+    expect(output).toContain(LIST_MARKERS[viewMode]);
   }
 });
 
@@ -274,8 +293,8 @@ test('tree and graph replace the list with details when too narrow', async () =>
     });
 
     const output = await renderText(<Board />, 80, 30);
-    expect(output).toContain('Type:');
-    expect(output).not.toMatch(/not done/i);
+    expect(output).toContain('esc close');
+    expect(output).not.toContain(LIST_MARKERS[viewMode]);
   }
 });
 
@@ -296,7 +315,7 @@ test('side-by-side details are a passive follower without an arrow-paging hint',
   });
 
   const output = await renderText(<Board />, 140, 30);
-  expect(output).toContain('Description:'); // detail panel is shown...
+  expect(output).toContain('LINE-1');         // detail panel is shown...
   expect(output).toMatch(/child row/i);     // ...beside the list...
   expect(output).not.toContain('↓ more');   // ...and the panel does not page on arrows
 });

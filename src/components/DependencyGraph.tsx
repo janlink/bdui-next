@@ -256,7 +256,7 @@ export function DependencyGraph({ data, terminalWidth, terminalHeight }: Depende
             </Box>
           </Box>
           {detailsAlongside && (
-            <Box marginLeft={2} flexGrow={1} overflow="hidden">
+            <Box marginLeft={1} flexGrow={1} overflow="hidden">
               <DetailPanel
                 issue={selectedIssue ?? null}
                 maxHeight={detailHeight}
