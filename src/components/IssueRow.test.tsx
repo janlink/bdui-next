@@ -5,10 +5,10 @@ import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { normalizeBeads } from '../bd/parser';
 import { GLYPH_TIERS, getGlyphs } from '../session/glyphs';
 import { getTheme } from '../themes/themes';
-import { rowLayout } from '../utils/constants';
+import { ID_COLUMN_MAX, ROW_GRID, rowLayout } from '../utils/constants';
 import { buildVisibleTree, flattenTree } from '../utils/tree';
 import { renderLines } from '../test-utils/ink-render';
-import { ListRow } from './IssueRow';
+import { ListRow, idColumnWidth } from './IssueRow';
 import type { FlatNode } from '../utils/tree';
 
 const theme = getTheme('default', 'ansi256');
@@ -197,5 +197,62 @@ describe('deep nesting', () => {
     );
     expect(stringWidth(line!)).toBe(width);
     expect(line!.endsWith(glyphs.ellipsis)).toBe(false);
+  });
+});
+
+describe('id column', () => {
+  const deepNode = (id: string, depth: number): FlatNode => ({
+    ...nodes[2]!,
+    depth,
+    prefix: '\u2502 '.repeat(depth),
+    issue: { ...nodes[2]!.issue, id },
+  });
+
+  test('keeps the grid floor while every id fits it', () => {
+    expect(idColumnWidth([nodes[0]!, nodes[3]!], glyphs, 140)).toBe(ROW_GRID.id);
+  });
+
+  test('grows to the deepest branch plus its id plus one cell of air', () => {
+    // '  └─ ' (5) + 'bdui-1a8.23.14' (14) + 1
+    expect(idColumnWidth(nodes, glyphs, 140)).toBe(20);
+  });
+
+  test('stops at the ceiling however deep the tree goes', () => {
+    expect(idColumnWidth([deepNode('bdui-platform-1a8.23.14.7.2', 9)], glyphs, 200)).toBe(ID_COLUMN_MAX);
+  });
+
+  test('stops growing where the title would drop under its floor', () => {
+    // 60 - (34 - 15) - 26 = 15: a narrow terminal keeps the grid floor.
+    expect(idColumnWidth(nodes, glyphs, 60)).toBe(ROW_GRID.id);
+    // 66 leaves 21 for the id, less than the 24 the deep id would take.
+    expect(idColumnWidth([deepNode('bdui-platform-1a8.23.14.7.2', 9)], glyphs, 66)).toBe(21);
+  });
+
+  test('measures the whole tree, so the window it scrolled to changes nothing', () => {
+    const whole = idColumnWidth(nodes, glyphs, 140);
+    for (let start = 0; start < nodes.length; start += 1) {
+      expect(idColumnWidth(nodes, glyphs, 140)).toBe(whole);
+      expect(idColumnWidth([...nodes.slice(start), ...nodes.slice(0, start)], glyphs, 140)).toBe(whole);
+    }
+  });
+
+  test('a wider column shows the deep id in full and moves the title with it', async () => {
+    const width = 140;
+    const idWidth = idColumnWidth(nodes, glyphs, width);
+    const lines = await renderLines(
+      <Box flexDirection="column" width={width}>
+        {nodes.map(node => (
+          <ListRow key={node.issue.id} node={node} isSelected={false} theme={theme} glyphs={glyphs} width={width} idWidth={idWidth} />
+        ))}
+      </Box>,
+      width,
+    );
+    expect(lines[2]).toContain('bdui-1a8.23.14 ');
+    expect(lines[2]).not.toContain(glyphs.ellipsis);
+    const grid = rowLayout(width, glyphs, idWidth);
+    const titleStart = grid.gutter + grid.status + grid.gap + grid.id;
+    for (const line of lines) expect(stringWidth(line)).toBe(width);
+    expect(lines[0]!.slice(titleStart)).toStartWith('epic Root epic');
+    expect(lines[3]!.slice(titleStart)).toStartWith('chore Closed chore');
   });
 });

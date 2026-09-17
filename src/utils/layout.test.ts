@@ -24,6 +24,13 @@ describe('row grid', () => {
     expect(rowLayout(width, fancy).title).toBe(title);
   });
 
+  test('gives a measured id column its cells and takes them from the title', () => {
+    const grid = rowLayout(100, fancy, 20);
+    expect(grid.id).toBe(20);
+    expect(grid.fixed).toBe(39);
+    expect(grid.title).toBe(61);
+  });
+
   test('never reports a negative title width', () => {
     expect(rowLayout(20, fancy).title).toBe(0);
   });

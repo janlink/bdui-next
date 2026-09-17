@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
 import { buildVisibleTree, flattenTree } from '../utils/tree';
 import { useTreeNavigation } from './useTreeNavigation';
-import { ListHeader, ListRow } from './IssueRow';
+import { ListHeader, ListRow, idColumnWidth } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
 import { Footer } from './Footer';
 import { Header, type HeaderStat } from './Header';
@@ -61,11 +61,12 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
     { text: `${flatNodes.length === 0 ? 0 : selectedIndex + 1}/${flatNodes.length}`, strong: true },
   ];
   const trailerIndent = (({ gutter, status, gap }) => gutter + status + gap)(rowLayout(listWidth, glyphs));
+  const idWidth = idColumnWidth(flatNodes, glyphs, listWidth);
 
   return (
     <Box flexDirection="column" width="100%" height={terminalHeight}>
       <Header view="Tree" stats={stats} width={terminalWidth} />
-      <ListHeader theme={theme} glyphs={glyphs} width={listWidth} />
+      <ListHeader theme={theme} glyphs={glyphs} width={listWidth} idWidth={idWidth} />
 
       <Box flexGrow={1} overflow="hidden">
         {flatNodes.length === 0 ? (
@@ -89,6 +90,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
                   theme={theme}
                   glyphs={glyphs}
                   width={listWidth}
+                  idWidth={idWidth}
                 />
               ))}
               {(scrollOffset > 0 || below > 0) && (
