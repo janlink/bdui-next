@@ -3,7 +3,9 @@ import { Box, Text, useInput, useApp, useStdout } from 'ink';
 import { useBeadsStore, isModalOpen } from '../state/store';
 import { Board } from './Board';
 import { BeadsWatcher } from '../bd/watcher';
+import { basename } from 'node:path';
 import { loadBeads, findBeadsDir } from '../bd/parser';
+import { workspaceForBeadsPath } from '../bd/client';
 
 export function App() {
   const { exit } = useApp();
@@ -12,6 +14,8 @@ export function App() {
   const setTerminalSize = useBeadsStore(state => state.setTerminalSize);
   const setReloadCallback = useBeadsStore(state => state.setReloadCallback);
   const setBeadsPath = useBeadsStore(state => state.setBeadsPath);
+  const setWorkspaceName = useBeadsStore(state => state.setWorkspaceName);
+  const setLiveState = useBeadsStore(state => state.setLiveState);
   const theme = useBeadsStore(state => state.theme);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,16 +60,23 @@ export function App() {
         if (disposed) return;
         setData(data);
         setBeadsPath(path);
+        setWorkspaceName(basename(workspaceForBeadsPath(path)));
+        setLiveState('live');
 
         // Set up watcher
         const pollMs = Number(process.env.BDUI_POLL_MS);
-        const watcher = new BeadsWatcher(
-          path,
-          Number.isFinite(pollMs) && pollMs > 0 ? { intervalMs: pollMs } : {},
-        );
+        // A failed poll keeps the last snapshot on screen; the header says so.
+        const watcher = new BeadsWatcher(path, {
+          ...(Number.isFinite(pollMs) && pollMs > 0 ? { intervalMs: pollMs } : {}),
+          onError: () => {
+            if (!disposed) setLiveState('stale');
+          },
+        });
         activeWatcher = watcher;
         unsubscribe = watcher.subscribe((data) => {
-          if (!disposed) setData(data);
+          if (disposed) return;
+          setData(data);
+          setLiveState('live');
         });
         watcher.start();
 
@@ -90,8 +101,9 @@ export function App() {
       activeWatcher?.stop();
       setReloadCallback(null);
       setBeadsPath(null);
+      setWorkspaceName(null);
     };
-  }, [setData, setReloadCallback, setBeadsPath]);
+  }, [setData, setReloadCallback, setBeadsPath, setWorkspaceName, setLiveState]);
 
   // Keyboard navigation
   const moveUp = useBeadsStore(state => state.moveUp);

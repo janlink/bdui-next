@@ -4,6 +4,7 @@ import { detectStatusChanges, notifyStatusChange } from '../utils/notifications'
 import { LAYOUT, listBudget, hasActiveFilters } from '../utils/constants';
 import { DEFAULT_COLOR_DEPTH, type ColorDepth } from '../session/colors';
 import { DEFAULT_GLYPH_TIER, getGlyphs, type GlyphSet, type GlyphTier } from '../session/glyphs';
+import { DEFAULT_SURFACE, type SurfaceMode } from '../session/surface';
 import { getTheme, type Theme } from '../themes/themes';
 import { parseSearchQuery, issueMatchesParsedQuery, type ParsedQuery } from '../utils/search-query';
 import {
@@ -18,6 +19,8 @@ import {
 } from '../utils/visibility';
 
 type VisibleColumns = Record<StatusKey, Issue[]>;
+
+export type LiveState = 'loading' | 'live' | 'stale';
 
 interface ColumnState {
   selectedIndex: number;
@@ -64,6 +67,10 @@ export interface BeadsStore {
   previousIssues: Map<string, Issue>; // Track previous state for notifications
   reloadCallback: (() => void) | null; // Callback to reload data from database
   beadsPath: string | null; // Active .beads directory, used for out-of-band reads (memories)
+  workspaceName: string | null; // Basename of the workspace the .beads directory belongs to
+  // Whether the last poll through the bd CLI succeeded; the data on screen is
+  // retained either way, so the header tells the viewer how fresh it is.
+  liveState: LiveState;
 
   // Terminal dimensions
   terminalWidth: number;
@@ -99,6 +106,7 @@ export interface BeadsStore {
   colorDepth: ColorDepth;
   glyphTier: GlyphTier;
   glyphs: GlyphSet;
+  surface: SurfaceMode;
   searchQuery: string;
   notificationsEnabled: boolean;
 
@@ -123,6 +131,8 @@ export interface BeadsStore {
   setData: (data: BeadsData) => void;
   setReloadCallback: (callback: (() => void) | null) => void;
   setBeadsPath: (path: string | null) => void;
+  setWorkspaceName: (name: string | null) => void;
+  setLiveState: (state: LiveState) => void;
   setFilter: (filter: BeadsStore['filter']) => void;
   toggleStatusVisibility: (key: StatusKey) => void;
   resetStatusVisibility: () => void;
@@ -153,7 +163,7 @@ export interface BeadsStore {
   toggleThemeSelector: () => void;
   toggleJumpToPage: () => void;
   setTheme: (theme: string) => void;
-  setSessionAxes: (axes: { colorDepth: ColorDepth; glyphTier: GlyphTier }) => void;
+  setSessionAxes: (axes: { colorDepth: ColorDepth; glyphTier: GlyphTier; surface: SurfaceMode }) => void;
   clearFilters: () => void;
   setViewMode: (mode: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories' | 'create-issue' | 'edit-issue') => void;
   navigateToCreateIssue: () => void;
@@ -266,6 +276,8 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   previousIssues: new Map(),
   reloadCallback: null,
   beadsPath: null,
+  workspaceName: null,
+  liveState: 'loading',
 
   // Terminal dimensions (defaults, will be updated)
   terminalWidth: 120,
@@ -295,6 +307,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   colorDepth: DEFAULT_COLOR_DEPTH,
   glyphTier: DEFAULT_GLYPH_TIER,
   glyphs: getGlyphs(DEFAULT_GLYPH_TIER),
+  surface: DEFAULT_SURFACE,
   searchQuery: '',
   notificationsEnabled: true, // Enabled by default
 
@@ -355,6 +368,8 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   setReloadCallback: (callback) => set({ reloadCallback: callback }),
 
   setBeadsPath: (beadsPath) => set({ beadsPath }),
+  setWorkspaceName: (workspaceName) => set({ workspaceName }),
+  setLiveState: (liveState) => set(state => (state.liveState === liveState ? state : { liveState })),
 
   setFilter: (filter) => set({ filter, columnStates: resetColumnStates() }),
 
@@ -651,11 +666,12 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   setTheme: (theme) =>
     set(state => ({ currentTheme: theme, theme: getTheme(theme, state.colorDepth) })),
 
-  setSessionAxes: ({ colorDepth, glyphTier }) =>
+  setSessionAxes: ({ colorDepth, glyphTier, surface }) =>
     set(state => ({
       colorDepth,
       glyphTier,
       glyphs: getGlyphs(glyphTier),
+      surface,
       theme: getTheme(state.currentTheme, colorDepth),
     })),
 
