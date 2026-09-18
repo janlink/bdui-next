@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fork at the panel border, name the issue above the panel and its keys below
   it, so the panel drops its own border, id row and key row and the tree gains
   the row its trailer used to spend.
+- The Kanban board takes the same chrome. Its `BD TUI - Kanban Board` title,
+  the terminal-size hint and the counts row give way to one header rule that
+  names the view, the workspace, the issue count, how many columns are hidden
+  and the cursor position in the active column. The detail panel beside the
+  board is framed by the rules instead of drawing its own border, which leaves
+  the board a row it used to spend on chrome.
 - The detail panel is a borderless key/value grid with a progress bar for
   parents, the subtasks with their status, ISO timestamps, and the description
   paged underneath; the side pane is 40 cells wide in Tree and Kanban.

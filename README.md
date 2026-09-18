@@ -208,6 +208,9 @@ The main view shows issues organized in five columns:
 - **Other** - Deferred, pinned, hooked, custom, and future statuses; cards retain the raw status
 
 Features:
+- The board sits between the same rules as the tree: the header rule names the
+  view, the workspace, the issue count, how many columns are hidden, and where
+  the cursor stands in the active column; the footer rule carries the view tabs
 - Beads priority semantics: P0 Critical, P1 High, P2 Medium, P3 Low, P4 Backlog
 - Type indicators including epic, feature, bug, task, chore, and decision
 - Label tags
@@ -354,7 +357,8 @@ The Kanban board fills the width with as many 24-cell columns as fit:
 - **60-71 cols**: Two columns
 
 With the detail panel open, a terminal of 90 columns or more shows the panel
-in a 40-cell pane beside the board; below that the panel replaces the board.
+in a 40-cell pane beside the board, framed by the rules the way the tree frames
+it; below that the panel replaces the board and keeps its own border.
 The Tree view splits at 107 columns, where the list keeps at least 70 cells
 and the panel grows from 36 to 40. Beside the list the panel hangs in
 the frame the view already draws: the rules fork at its border, name the issue

@@ -5,7 +5,6 @@ import { getTheme, type Theme } from '../themes/themes';
 export const LAYOUT = {
   columnWidth: 37,
   detailPanelWidth: 40,
-  uiOverhead: 14,
   issueCardHeight: 8,
   titleMaxLength: 32,
   descriptionMaxLength: 200,
@@ -98,7 +97,7 @@ export type ListView = 'tree' | 'memories' | 'kanban' | 'stats';
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
   tree: { body: 4, panel: 3 },
   memories: { body: 7, panel: 7 },
-  kanban: { body: LAYOUT.uiOverhead, panel: 4 },
+  kanban: { body: 13, panel: 3 },
   stats: { body: 2, panel: 2 },
 };
 
