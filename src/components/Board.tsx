@@ -111,6 +111,7 @@ function KanbanView({ height }: { height: number }) {
               issue={selectedIssue}
               maxHeight={detailsHeight}
               availableWidth={terminalWidth}
+              enablePaging={false}
             />
           </Box>
         ) : (
@@ -242,7 +243,6 @@ export function Board() {
       {viewMode === 'stats' && (
         <StatsView
           issues={statsIssues}
-          totalIssues={data.issues.length}
           terminalWidth={terminalWidth}
           terminalHeight={viewHeight}
         />

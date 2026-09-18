@@ -21,7 +21,7 @@ interface FooterProps {
   /** Rows the view scrolled past, above and below its window. */
   trailer?: FooterTrailer;
   /** A detail panel beside the view: the rule closes its border and carries its keys. */
-  panel?: { width: number };
+  panel?: { width: number; actions?: readonly [key: string, label: string][] };
 }
 
 export const FOOTER_HEIGHT = 2;
@@ -30,7 +30,7 @@ export const FOOTER_HEIGHT = 2;
 export const LEGEND_MIN_WIDTH = 120;
 
 /** The words the key hints carry, in display order. */
-export const FOOTER_HINT_WORDS = ['search', 'filter', 'details', 'cmd', 'help'] as const;
+export const FOOTER_HINT_WORDS = ['search', 'filter', 'details', 'move', 'delete', 'refresh', 'cmd', 'help'] as const;
 
 type HintWord = (typeof FOOTER_HINT_WORDS)[number];
 type StatusGlyph = 'statusOpen' | 'statusInProgress' | 'statusBlocked' | 'statusClosed' | 'statusDeferred';
@@ -51,7 +51,7 @@ const VIEWS = [
 ];
 
 // The order the hints leave in when the row runs short; help goes last.
-const DROP_ORDER: readonly HintWord[] = ['cmd', 'details', 'filter', 'search', 'help'];
+const DROP_ORDER: readonly HintWord[] = ['cmd', 'details', 'refresh', 'delete', 'filter', 'search', 'move', 'help'];
 
 const LEGEND: ReadonlyArray<[glyph: StatusGlyph, color: keyof Theme['colors'], word: string]> = [
   ['statusOpen', 'statusOpen', 'open'],
@@ -61,7 +61,10 @@ const LEGEND: ReadonlyArray<[glyph: StatusGlyph, color: keyof Theme['colors'], w
   ['statusDeferred', 'statusDeferred', 'deferred'],
 ];
 
-function hintsOf(glyphs: GlyphSet): Hint[] {
+function hintsOf(currentView: ViewKey, glyphs: GlyphSet): Hint[] {
+  if (currentView === 'memories') {
+    return [['/', 'search'], ['f', 'filter'], ['j/k', 'move'], ['d', 'delete'], ['r', 'refresh'], [':', 'cmd'], ['?', 'help']];
+  }
   return [['/', 'search'], ['f', 'filter'], [glyphs.enter, 'details'], [':', 'cmd'], ['?', 'help']];
 }
 
@@ -166,7 +169,7 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
   const noticeWord = notificationsEnabled ? 'on' : 'off';
   const row = fitHintsRow(
     inner,
-    hintsOf(glyphs),
+    hintsOf(currentView, glyphs),
     LEGEND.map(([glyph, , word]) => `${glyphs[glyph]} ${word}`),
     `n ${noticeWord}`,
     terminalWidth,
@@ -187,11 +190,12 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
             width={panel.width + 1}
             left={[
               { text: `${glyphs.rule}${glyphs.ruleUp}` },
-              ...words([[
-                { text: 'e', style: theme.ink.strong }, { text: ' edit  ', style: theme.ink.faint },
-                { text: 'x', style: theme.ink.strong }, { text: ' export  ', style: theme.ink.faint },
-                { text: 'esc', style: theme.ink.strong }, { text: ' close', style: theme.ink.faint },
-              ]], glyphs),
+              ...words([(
+                panel.actions ?? [['e', 'edit'], ['x', 'export'], ['esc', 'close']]
+              ).flatMap(([key, label], index, actions) => [
+                { text: key, style: theme.ink.strong },
+                { text: ` ${label}${index < actions.length - 1 ? '  ' : ''}`, style: theme.ink.faint },
+              ])], glyphs),
             ]}
             theme={theme}
             glyphs={glyphs}

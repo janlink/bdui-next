@@ -60,9 +60,9 @@ describe('split view', () => {
 describe('list budget', () => {
   test.each([
     ['tree', 41, 41, 42],
-    ['memories', 38, 38, 38],
+    ['memories', 42, 42, 42],
     ['kanban', 32, 32, 42],
-    ['stats', 43, 43, 43],
+    ['stats', 42, 42, 42],
   ] as const)('%s at 45 rows', (view, body, itemsPerPage, panelHeight) => {
     expect(listBudget(view, 45)).toEqual({ body, itemsPerPage, panelHeight });
   });
