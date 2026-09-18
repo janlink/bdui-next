@@ -20,6 +20,11 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { CommandBar } from './CommandBar';
 import { hasActiveFilters, listBudget, CHROME_HEIGHT, LAYOUT } from '../utils/constants';
 import { Footer } from './Footer';
+import { Header, type HeaderStat } from './Header';
+
+// The panel's border stands on its own first cell, so one cell of gap is all
+// the board gives up; the rules above and below fork on that border.
+const SPLIT_GAP = 1;
 
 function KanbanView({ height }: { height: number }) {
   const data = useBeadsStore(state => state.data);
@@ -28,13 +33,12 @@ function KanbanView({ height }: { height: number }) {
   const itemsPerPage = useBeadsStore(state => state.itemsPerPage);
   const showDetails = useBeadsStore(state => state.showDetails);
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
-  // Header reports the real terminal size; `height` is only what is left for this view.
-  const terminalHeight = useBeadsStore(state => state.terminalHeight);
   const getSelectedIssue = useBeadsStore(state => state.getSelectedIssue);
   const getVisibleColumns = useBeadsStore(state => state.getVisibleColumns);
   const searchQuery = useBeadsStore(state => state.searchQuery);
   const filter = useBeadsStore(state => state.filter);
   const theme = useBeadsStore(state => state.theme);
+  const glyphs = useBeadsStore(state => state.glyphs);
 
   const selectedIssue = getSelectedIssue();
   const visibleColumnsByStatus = useMemo(
@@ -54,13 +58,13 @@ function KanbanView({ height }: { height: number }) {
   const shouldShowDetailsAlongside = showDetails
     && terminalWidth >= MIN_COLUMN_WIDTH * 2 + LAYOUT.detailPanelWidth + 2;
   const widthForColumns = shouldShowDetailsAlongside
-    ? terminalWidth - LAYOUT.detailPanelWidth - 2
+    ? terminalWidth - LAYOUT.detailPanelWidth - SPLIT_GAP
     : terminalWidth;
   const visibleColumns = Math.min(5, Math.max(1, Math.floor(widthForColumns / MIN_COLUMN_WIDTH)));
   const columnWidth = shouldShowDetailsAlongside
     ? MIN_COLUMN_WIDTH
     : Math.min(MAX_COLUMN_WIDTH, Math.floor(widthForColumns / visibleColumns));
-  const detailWidth = terminalWidth - visibleColumns * columnWidth - 2;
+  const detailWidth = terminalWidth - visibleColumns * columnWidth - SPLIT_GAP;
   const detailsHeight = listBudget('kanban', height).panelHeight;
 
   const statusConfig = [
@@ -78,29 +82,26 @@ function KanbanView({ height }: { height: number }) {
   );
   const columnsToShow = statusConfig.slice(firstVisibleColumn, firstVisibleColumn + visibleColumns);
 
+  const activeColumn = statusConfig[selectedColumn] ?? statusConfig[0];
+  const activeIssues = visibleColumnsByStatus[activeColumn.key];
+  const activePosition = activeIssues.length === 0
+    ? 0
+    : Math.min(columnStates[activeColumn.key].selectedIndex + 1, activeIssues.length);
+  const stats: HeaderStat[] = [
+    { text: `${filteredStats.total} issues` },
+    ...(visibleColumns < 5 ? [{ text: `${5 - visibleColumns} hidden` }] : []),
+    { text: `${activeColumn.title} ${activePosition}/${activeIssues.length}`, strong: true },
+  ];
+  const panel = shouldShowDetailsAlongside ? { width: detailWidth } : undefined;
+
   return (
     <Box flexDirection="column" width={terminalWidth} height={height}>
-      {/* Header */}
-      <Box flexDirection="column">
-        <Box justifyContent="space-between">
-          <Text bold color={theme.colors.primary}>
-            BD TUI - Kanban Board
-          </Text>
-          <Text color={theme.colors.textDim}>
-            {terminalWidth}x{terminalHeight} | Press ? for help
-          </Text>
-        </Box>
-        <Box gap={2}>
-          <Text color={theme.colors.textDim}>Total: <Text color={theme.colors.text}>{filteredStats.total}</Text></Text>
-          <Text color={theme.colors.textDim}>Open: <Text color={theme.colors.statusOpen}>{filteredStats.open}</Text></Text>
-          <Text color={theme.colors.textDim}>Blocked: <Text color={theme.colors.statusBlocked}>{filteredStats.blocked}</Text></Text>
-          <Text color={theme.colors.textDim}>Closed: <Text color={theme.colors.statusClosed}>{filteredStats.closed}</Text></Text>
-          <Text color={theme.colors.textDim}>Other: <Text color={theme.colors.text}>{visibleColumnsByStatus.other.length}</Text></Text>
-          {visibleColumns < 5 && (
-            <Text color={theme.colors.warning}>[{5 - visibleColumns} hidden]</Text>
-          )}
-        </Box>
-      </Box>
+      <Header
+        view="Kanban"
+        stats={stats}
+        width={terminalWidth}
+        panel={panel && selectedIssue ? { ...panel, title: selectedIssue.id } : undefined}
+      />
 
       {/* Main content */}
       <Box flexGrow={1} overflow="hidden">
@@ -133,11 +134,24 @@ function KanbanView({ height }: { height: number }) {
               })}
             </Box>
             {shouldShowDetailsAlongside && (
-              <Box marginLeft={2} flexGrow={1} overflow="hidden">
+              <Box
+                marginLeft={SPLIT_GAP}
+                width={detailWidth}
+                flexShrink={0}
+                borderStyle={glyphs.border('single')}
+                borderLeft
+                borderTop={false}
+                borderRight={false}
+                borderBottom={false}
+                borderColor={theme.colors.rule}
+                overflow="hidden"
+              >
                 <DetailPanel
                   issue={selectedIssue}
                   maxHeight={detailsHeight}
-                  availableWidth={detailWidth}
+                  availableWidth={detailWidth - 1}
+                  enablePaging={false}
+                  chrome="hosted"
                 />
               </Box>
             )}
@@ -145,8 +159,7 @@ function KanbanView({ height }: { height: number }) {
         )}
       </Box>
 
-      {/* Footer */}
-      <Footer currentView="kanban" />
+      <Footer currentView="kanban" panel={panel} />
     </Box>
   );
 }

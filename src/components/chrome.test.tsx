@@ -60,6 +60,7 @@ async function frameOf(
 }
 
 const VIEWS = ['tree', 'kanban', 'stats', 'memories'] as const;
+const DOT = getGlyphs('fancy').indicator;
 
 describe('view chrome', () => {
   for (const viewMode of VIEWS) {
@@ -85,6 +86,28 @@ describe('view chrome', () => {
     const lines = await frameOf({ viewMode: 'tree', showDetails: false });
     expect(lines.some(line => line.includes(' more'))).toBe(false);
     expect(lines[HEIGHT - 1]).toContain('deferred');
+  });
+
+  test.each([
+    ['tree', 'bd-0000'],
+    ['kanban', 'bd-0000'],
+  ] as const)('%s rules its own row above the view', async (viewMode, id) => {
+    const lines = await frameOf({ viewMode, showDetails: false, workspaceName: 'bdui', liveState: 'live' });
+    const name = viewMode === 'tree' ? 'Tree' : 'Kanban';
+    expect(lines[0]).toMatch(new RegExp(`^─ ${name} ─ bdui ─+ .*${DOT} live ─$`));
+    expect(stringWidth(lines[0]!)).toBe(WIDTH);
+    expect(lines[0]).not.toContain(id);
+  });
+
+  test('the kanban rules fork at the panel border', async () => {
+    const lines = await frameOf({ viewMode: 'kanban', showDetails: true });
+    const glyphs = getGlyphs('fancy');
+    const column = lines[0]!.indexOf(glyphs.ruleDown);
+    expect(column).toBeGreaterThan(0);
+    expect(lines[0]!.slice(column + 1)).toMatch(/^─ bd-0000 ─+$/);
+    expect(lines[1]![column]).toBe(glyphs.treeVertical);
+    expect(lines[HEIGHT - 2]![column]).toBe(glyphs.ruleUp);
+    expect(lines[HEIGHT - 2]!.slice(column + 1)).toMatch(/^─ e edit {2}x export {2}esc close ─+$/);
   });
 
   test('the split detail panel joins the rules and draws its border on every body row', async () => {

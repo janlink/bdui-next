@@ -211,10 +211,11 @@ test('all detail layouts use their actual available width', async () => {
 test('detail paging starts exactly one row past each visible layout boundary', async () => {
   // The panel spends fifteen rows around the description here: one title row,
   // id, blank, four grid rows, the rule, three subtask rows, three stamp rows
-  // and the key hints. The rest of each layout's panel height is the page.
+  // and the key hints. A panel hosted between the rules spends two fewer, since
+  // the rules carry its id and its keys. The rest of the panel height is page.
   const layouts = [
-    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 80, pageRows: 11 },
-    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 11 },
+    { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 80, pageRows: 12 },
+    { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 14 },
     { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 12 },
   ];
 
