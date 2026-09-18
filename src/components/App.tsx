@@ -269,18 +269,18 @@ export function App() {
         jumpToFirst();
         return;
       }
-      // Arrow keys scroll the description while details are open. Vim keys still
-      // change selection, so users can inspect another issue without closing it.
-      if ((!showDetails && key.upArrow) || input === 'k') {
+      // The board owns its directional keys even beside a detail panel; the
+      // panel pages long descriptions with PgUp/PgDn.
+      if (key.upArrow || input === 'k') {
         moveUp();
       }
-      if ((!showDetails && key.downArrow) || input === 'j') {
+      if (key.downArrow || input === 'j') {
         moveDown();
       }
-      if ((!showDetails && key.leftArrow) || input === 'h') {
+      if (key.leftArrow || input === 'h') {
         moveLeft();
       }
-      if ((!showDetails && key.rightArrow) || input === 'l') {
+      if (key.rightArrow || input === 'l') {
         moveRight();
       }
     }

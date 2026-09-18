@@ -5,6 +5,7 @@ import { loadMemories, forgetMemory } from '../bd/memories';
 import type { Memory } from '../types';
 import { Footer } from './Footer';
 import { listBudget } from '../utils/constants';
+import { Header, type HeaderStat } from './Header';
 
 interface MemoriesViewProps {
   terminalWidth: number;
@@ -112,22 +113,29 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
 
   const useSplit = terminalWidth >= 72;
   const listWidth = useSplit ? Math.min(40, Math.floor(terminalWidth / 2)) : terminalWidth;
-  const detailWidth = useSplit ? terminalWidth - listWidth - 3 : terminalWidth;
+  const detailWidth = useSplit ? terminalWidth - listWidth - 1 : terminalWidth;
   const keyColumnWidth = Math.max(6, listWidth - 4);
+  const trailer = {
+    above: nav.scrollOffset,
+    below: Math.max(0, memories.length - (nav.scrollOffset + itemsPerPage)),
+  };
+  const headerStats: HeaderStat[] = [
+    { text: `${memories.length} memories` },
+    ...(loading ? [{ text: 'loading', strong: true }] : []),
+  ];
+  const panel = useSplit && selected ? { width: detailWidth } : undefined;
 
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Header */}
-      <Box justifyContent="space-between">
-        <Text bold color={theme.colors.primary}>BD TUI - Memories</Text>
-        <Box gap={2}>
-          <Text color={theme.colors.textDim}>Total: <Text color={theme.colors.text}>{memories.length}</Text></Text>
-          {loading && <Text color={theme.colors.warning}>[loading]</Text>}
-        </Box>
-      </Box>
+      <Header
+        view="Memories"
+        stats={headerStats}
+        width={terminalWidth}
+        panel={panel ? { ...panel, title: selected.key } : undefined}
+      />
 
       {/* Body */}
-      <Box flexGrow={1} overflow="hidden" marginTop={1}>
+      <Box flexGrow={1} overflow="hidden">
         {error ? (
           <Box paddingX={1}>
             <Text color={theme.colors.error}>Fehler beim Laden: {error}</Text>
@@ -156,14 +164,6 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
                   </Text>
                 );
               })}
-              <Box marginTop={1} justifyContent="space-between" width={listWidth}>
-                <Text color={theme.colors.warning}>{nav.scrollOffset > 0 ? `${glyphs.scrollUp} ${nav.scrollOffset}` : ''}</Text>
-                <Text color={theme.colors.warning}>
-                  {nav.scrollOffset + itemsPerPage < memories.length
-                    ? `${glyphs.scrollDown} ${memories.length - (nav.scrollOffset + itemsPerPage)}`
-                    : ''}
-                </Text>
-              </Box>
             </Box>
 
             {/* Value detail */}
@@ -173,28 +173,27 @@ export function MemoriesView({ terminalWidth, terminalHeight }: MemoriesViewProp
                 paddingX={1}
                 flexGrow={1}
                 flexDirection="column"
-                borderStyle={glyphs.border('round')}
-                borderColor={theme.colors.border}
+                borderStyle={glyphs.border('single')}
+                borderLeft
+                borderTop={false}
+                borderRight={false}
+                borderBottom={false}
+                borderColor={theme.colors.rule}
                 overflow="hidden"
                 width={detailWidth}
               >
-                <Text bold color={theme.colors.textDim}>{selected.key}</Text>
-                <Box marginTop={1}>
-                  <Text color={theme.colors.text} wrap="wrap">{selected.value}</Text>
-                </Box>
+                <Text color={theme.colors.text} wrap="wrap">{selected.value}</Text>
               </Box>
             )}
           </>
         )}
       </Box>
 
-      {/* View-specific hint */}
-      <Box paddingX={1}>
-        <Text color={theme.colors.textDim}>j/k move | d delete | r refresh</Text>
-      </Box>
-
-      {/* Footer */}
-      <Footer currentView="memories" />
+      <Footer
+        currentView="memories"
+        trailer={trailer}
+        panel={panel ? { ...panel, actions: [['d', 'delete'], ['r', 'refresh']] } : undefined}
+      />
     </Box>
   );
 }

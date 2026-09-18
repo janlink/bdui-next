@@ -305,19 +305,21 @@ test('side-by-side details announce their tail and offer PgUp/PgDn instead of th
     { id: 'c', title: 'Child row', status: 'open', issue_type: 'task', priority: 2,
       dependencies: [{ issue_id: 'c', depends_on_id: 'p', type: 'parent-child' }] },
   ]);
-  useBeadsStore.setState({
-    data,
-    previousIssues: new Map(data.byId),
-    viewMode: 'tree',
-    terminalWidth: 140,
-    terminalHeight: 30,
-    showDetails: true,
-  });
+  for (const viewMode of ['tree', 'kanban'] as const) {
+    useBeadsStore.setState({
+      data,
+      previousIssues: new Map(data.byId),
+      viewMode,
+      terminalWidth: 140,
+      terminalHeight: 30,
+      showDetails: true,
+    });
 
-  const output = await renderText(<Board />, 140, 30);
-  expect(output).toContain('LINE-1');         // detail panel is shown...
-  expect(output).toMatch(/child row/i);     // ...beside the list...
-  expect(output).toMatch(/↓ \d+ more lines  pgup\/pgdn/); // ...and says how to page what is cut
+    const output = await renderText(<Board />, 140, 30);
+    expect(output).toContain('LINE-1');
+    expect(output).toMatch(/child row/i);
+    expect(output).toMatch(/↓ \d+ more lines  pgup\/pgdn/);
+  }
 });
 
 test('description stays visible before variable-height metadata', async () => {
@@ -333,4 +335,3 @@ test('description stays visible before variable-height metadata', async () => {
   const output = await renderText(<DetailPanel issue={data.byId.get('verbose')!} maxHeight={20} />, 60, 20);
   expect(output).toContain('DESCRIPTION MARKER');
 });
-

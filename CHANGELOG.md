@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `3` Stats and `4` Memories, and `:graph` leaves the command bar.
 
 ### Changed
+- Statistics and Memories now use the shared rules chrome. Statistics sets its
+  issue and completion counts into the header while retaining its numeric
+  overview legend. Memories moves its scroll position and controls into the
+  footer, and its selected value joins the forked detail frame on wide
+  terminals.
 - The tree view is redrawn as a quiet hierarchy: a priority gutter, the status
   glyph (a fold caret on parents), an ID column measured over the whole tree
   between 15 and 24 cells that carries the tree stems and shortens long IDs

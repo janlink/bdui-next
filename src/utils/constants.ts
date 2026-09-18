@@ -96,9 +96,9 @@ export type ListView = 'tree' | 'memories' | 'kanban' | 'stats';
 // header cannot leave a view one row short.
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
   tree: { body: 4, panel: 3 },
-  memories: { body: 7, panel: 7 },
+  memories: { body: 3, panel: 3 },
   kanban: { body: 13, panel: 3 },
-  stats: { body: 2, panel: 2 },
+  stats: { body: 3, panel: 3 },
 };
 
 export interface ListBudget {

@@ -89,14 +89,14 @@ describe('view chrome', () => {
   });
 
   test.each([
-    ['tree', 'bd-0000'],
-    ['kanban', 'bd-0000'],
-  ] as const)('%s rules its own row above the view', async (viewMode, id) => {
+    ['tree', 'Tree'],
+    ['kanban', 'Kanban'],
+    ['stats', 'Stats'],
+    ['memories', 'Memories'],
+  ] as const)('%s rules its own row above the view', async (viewMode, name) => {
     const lines = await frameOf({ viewMode, showDetails: false, workspaceName: 'bdui', liveState: 'live' });
-    const name = viewMode === 'tree' ? 'Tree' : 'Kanban';
     expect(lines[0]).toMatch(new RegExp(`^─ ${name} ─ bdui ─+ .*${DOT} live ─$`));
     expect(stringWidth(lines[0]!)).toBe(WIDTH);
-    expect(lines[0]).not.toContain(id);
   });
 
   test('the kanban rules fork at the panel border', async () => {
@@ -214,6 +214,18 @@ describe('footer', () => {
   test('brackets the active tab where no colour can mark it', async () => {
     const lines = await frameOf({ viewMode: 'stats', theme: getTheme('default', 'none') });
     expect(lines[HEIGHT - 2]).toContain('─ 1 Tree ─ 2 Kanban ─ [3 Stats] ─ 4 Memories ─');
+  });
+
+  test('gives memories its navigation hints and panel actions', async () => {
+    useBeadsStore.setState({ terminalWidth: WIDTH, theme: getTheme('default', 'ansi256'), glyphs: getGlyphs('fancy') });
+    const lines = await renderLines(
+      <Footer currentView="memories" panel={{ width: 40, actions: [['d', 'delete'], ['r', 'refresh']] }} />,
+      WIDTH,
+    );
+    expect(lines[0]).toMatch(/─ d delete {2}r refresh ─+$/);
+    expect(lines[1]).toContain('j/k move');
+    expect(lines[1]).toContain('d delete');
+    expect(lines[1]).toContain('r refresh');
   });
 
   // The rule's right end, narrowing: the tab names go, the note shortens, the

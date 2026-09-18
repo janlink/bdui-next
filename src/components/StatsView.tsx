@@ -4,15 +4,15 @@ import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
 import { hasActiveFilters } from '../utils/constants';
 import { Footer } from './Footer';
+import { Header, type HeaderStat } from './Header';
 
 interface StatsViewProps {
   issues: Issue[];
-  totalIssues: number;
   terminalWidth: number;
   terminalHeight: number;
 }
 
-export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }: StatsViewProps) {
+export function StatsView({ issues, terminalWidth, terminalHeight }: StatsViewProps) {
   const filter = useBeadsStore(state => state.filter);
   const searchQuery = useBeadsStore(state => state.searchQuery);
   const theme = useBeadsStore(state => state.theme);
@@ -118,21 +118,18 @@ export function StatsView({ issues, totalIssues, terminalWidth, terminalHeight }
   });
   const remainder = Math.max(0, overviewBarWidth - used);
 
-  const headerCount = filtersActive ? `${issues.length}/${totalIssues}` : `${totalIssues}`;
+  const headerStats: HeaderStat[] = [
+    { text: `${total} issues` },
+    { text: `${stats.statusCounts.closed}/${total} closed` },
+    ...(filtersActive ? [{ text: 'filtered', strong: true }] : []),
+  ];
 
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Header */}
-      <Box justifyContent="space-between">
-        <Text bold color={theme.colors.primary}>BD TUI - Statistics</Text>
-        <Box gap={2}>
-          <Text color={theme.colors.textDim}>Total: <Text color={theme.colors.text}>{headerCount}</Text></Text>
-          {filtersActive && <Text color={theme.colors.warning}>[filtered]</Text>}
-        </Box>
-      </Box>
+      <Header view="Stats" stats={headerStats} width={terminalWidth} />
 
       {/* Overview: flagship progress bar */}
-      <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1} marginTop={1}>
+      <Box flexDirection="column" borderStyle={glyphs.border('round')} borderColor={theme.colors.border} paddingX={1}>
         <Box>
           <Text bold color={theme.colors.primary}>Overview</Text>
           <Box flexGrow={1} />

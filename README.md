@@ -254,6 +254,17 @@ Comprehensive analytics:
 - **Top Assignees** - Most active team members
 - **Top Labels** - Most used labels
 
+The Statistics header rule keeps the total issue count, closed count and live
+refresh state visible without taking a content row. Its numeric status legend
+remains beside the overview bar.
+
+### Memories
+
+Memories use the same header and footer rules as the issue views. On wide
+terminals the selected value shares a forked frame with its key in the header;
+the footer carries the scroll position plus `j/k` navigation, delete and
+refresh hints.
+
 ## 🔔 Notifications
 
 BD TUI supports native desktop notifications for important events:
