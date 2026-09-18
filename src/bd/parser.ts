@@ -63,7 +63,7 @@ function normalizeIssue(value: JsonObject): Issue | null {
 }
 
 /**
- * Normalize bd's tolerant JSON DTOs in two passes: issues first, then graph edges.
+ * Normalize bd's tolerant JSON DTOs in two passes: issues first, then their edges.
  * Raw status, issue type, and dependency type values are deliberately not coerced.
  */
 export function normalizeBeads(value: unknown): BeadsData {

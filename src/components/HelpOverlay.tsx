@@ -38,9 +38,8 @@ export function HelpOverlay() {
           <Text {...theme.ink.strong} bold>Views:</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>1</Text>              Tree view (hierarchical)</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>2</Text>              Kanban board view</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>3</Text>              Dependency graph (ASCII art)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>4</Text>              Statistics & analytics dashboard</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>5</Text>              Memories (bd remember; d delete, r refresh)</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>3</Text>              Statistics & analytics dashboard</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>4</Text>              Memories (bd remember; d delete, r refresh)</Text>
         </Box>
 
         <Box flexDirection="column" gap={0} marginTop={1}>
@@ -77,7 +76,7 @@ export function HelpOverlay() {
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:issue-id</Text>       Jump to issue by ID</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:s o/i/b/c</Text>      Set status</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:p 0-4</Text>          Set priority (P0 Critical {glyphs.arrowRight} P4 Backlog)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:kanban/tree/graph/stats/mem</Text>  Switch view</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:kanban/tree/stats/mem</Text>        Switch view</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:theme name</Text>     Change theme</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:new :edit :q</Text>   Create, edit, quit</Text>
         </Box>

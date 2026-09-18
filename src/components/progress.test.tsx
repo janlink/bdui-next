@@ -192,7 +192,6 @@ test('all detail layouts use their actual available width', async () => {
   for (const { viewMode, columns } of [
     { viewMode: 'kanban' as const, columns: 250 },
     { viewMode: 'tree' as const, columns: 120 },
-    { viewMode: 'graph' as const, columns: 120 },
   ]) {
     useBeadsStore.setState({
       data,
@@ -217,7 +216,6 @@ test('detail paging starts exactly one row past each visible layout boundary', a
     { name: 'replacement Kanban', viewMode: 'kanban' as const, columns: 80, pageRows: 11 },
     { name: 'side-by-side Kanban', viewMode: 'kanban' as const, columns: 250, pageRows: 11 },
     { name: 'Tree', viewMode: 'tree' as const, columns: 80, pageRows: 12 },
-    { name: 'Graph', viewMode: 'graph' as const, columns: 80, pageRows: 9 },
   ];
 
   for (const layout of layouts) {
@@ -259,12 +257,12 @@ test('detail paging starts exactly one row past each visible layout boundary', a
 });
 
 // The panel lists the children with their titles, so a child's title no longer
-// proves the list is there. These are what only the list rows draw: the tree's
-// priority gutter and the graph's type/status/priority tail.
-const LIST_MARKERS = { tree: getGlyphs('fancy').gutter, graph: 'task open P2' } as const;
+// proves the list is there. The tree's priority gutter is what only a list row
+// draws.
+const LIST_MARKERS = { tree: getGlyphs('fancy').gutter } as const;
 
-test('tree and graph show the list beside details when wide enough', async () => {
-  for (const viewMode of ['tree', 'graph'] as const) {
+test('the tree shows the list beside details when wide enough', async () => {
+  for (const viewMode of ['tree'] as const) {
     useBeadsStore.setState({
       data: issues,
       previousIssues: new Map(issues.byId),
@@ -282,8 +280,8 @@ test('tree and graph show the list beside details when wide enough', async () =>
   }
 });
 
-test('tree and graph replace the list with details when too narrow', async () => {
-  for (const viewMode of ['tree', 'graph'] as const) {
+test('the tree replaces the list with details when too narrow', async () => {
+  for (const viewMode of ['tree'] as const) {
     useBeadsStore.setState({
       data: issues,
       previousIssues: new Map(issues.byId),

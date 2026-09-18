@@ -60,7 +60,6 @@ describe('split view', () => {
 describe('list budget', () => {
   test.each([
     ['tree', 41, 41, 42],
-    ['graph', 37, 37, 39],
     ['memories', 38, 38, 38],
     ['kanban', 31, 31, 41],
     ['stats', 43, 43, 43],
@@ -68,11 +67,11 @@ describe('list budget', () => {
     expect(listBudget(view, 45)).toEqual({ body, itemsPerPage, panelHeight });
   });
 
-  test('the graph subtracts its level labels from the list only', () => {
-    expect(listBudget('graph', 45, 3)).toEqual({ body: 37, itemsPerPage: 34, panelHeight: 39 });
+  test('extra rows come off the list, not off the panel', () => {
+    expect(listBudget('tree', 45, 3)).toEqual({ body: 41, itemsPerPage: 38, panelHeight: 42 });
   });
 
-  test.each(['tree', 'graph', 'memories', 'kanban', 'stats'] as const)(
+  test.each(['tree', 'memories', 'kanban', 'stats'] as const)(
     '%s keeps at least one row on a tiny terminal',
     view => {
       const budget = listBudget(view, 2);

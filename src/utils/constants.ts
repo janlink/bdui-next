@@ -11,7 +11,7 @@ export const LAYOUT = {
   descriptionMaxLength: 200,
   minTerminalWidth: 60,
   minTerminalHeight: 20,
-  // Below splitViewMinWidth the Tree/Graph detail panel replaces the list; at or
+  // Below splitViewMinWidth the Tree detail panel replaces the list; at or
   // above it, list and panel sit side by side and each keeps at least its min.
   splitViewMinListWidth: 70,
   splitViewMinPanelWidth: 36,
@@ -23,7 +23,7 @@ export const LAYOUT = {
 // fork one cell past the list.
 const SPLIT_VIEW_GAP = 1;
 
-// Row-oriented views (Tree, Graph) show the detail panel beside the list when the
+// The tree shows the detail panel beside the list when the
 // terminal is wide enough for both, otherwise it replaces the list (like Kanban).
 // Panel width grows up to detailPanelWidth; the list takes the remainder.
 export function splitViewLayout(terminalWidth: number): {
@@ -90,14 +90,13 @@ export function rowLayout(width: number, glyphs: GlyphSet, idWidth: number = ROW
   };
 }
 
-export type ListView = 'tree' | 'graph' | 'memories' | 'kanban' | 'stats';
+export type ListView = 'tree' | 'memories' | 'kanban' | 'stats';
 
 // Rows each view spends on its own chrome, and on the chrome that frames its
 // detail panel. One table instead of an offset per call site, so a changed
 // header cannot leave a view one row short.
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
   tree: { body: 4, panel: 3 },
-  graph: { body: 8, panel: 6 },
   memories: { body: 7, panel: 7 },
   kanban: { body: LAYOUT.uiOverhead, panel: 4 },
   stats: { body: 2, panel: 2 },
@@ -111,7 +110,7 @@ export interface ListBudget {
 
 /**
  * How many rows a view may draw into. `extraRows` covers content the view
- * inserts between its chrome and its list, such as the graph's level labels.
+ * inserts between its chrome and its list.
  */
 export function listBudget(view: ListView, height: number, extraRows = 0): ListBudget {
   const chrome = VIEW_CHROME[view];
@@ -164,7 +163,6 @@ export const TYPE_LABELS: Record<string, string> = {
 export const VIEW_NAMES: Record<string, string> = {
   kanban: 'Kanban',
   tree: 'Tree',
-  graph: 'Graph',
   stats: 'Stats',
   memories: 'Memories',
 };

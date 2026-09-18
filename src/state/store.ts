@@ -82,8 +82,8 @@ export interface BeadsStore {
   chromeHeight: number;
 
   // UI state
-  viewMode: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories' | 'create-issue' | 'edit-issue';
-  previousView: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories';
+  viewMode: 'kanban' | 'tree' | 'stats' | 'memories' | 'create-issue' | 'edit-issue';
+  previousView: 'kanban' | 'tree' | 'stats' | 'memories';
   showHelp: boolean;
   showDetails: boolean;
   showSearch: boolean;
@@ -163,7 +163,7 @@ export interface BeadsStore {
   setTheme: (theme: string) => void;
   setSessionAxes: (axes: { colorDepth: ColorDepth; glyphTier: GlyphTier }) => void;
   clearFilters: () => void;
-  setViewMode: (mode: 'kanban' | 'tree' | 'graph' | 'stats' | 'memories' | 'create-issue' | 'edit-issue') => void;
+  setViewMode: (mode: 'kanban' | 'tree' | 'stats' | 'memories' | 'create-issue' | 'edit-issue') => void;
   navigateToCreateIssue: () => void;
   navigateToEditIssue: () => void;
   returnToPreviousView: () => void;
