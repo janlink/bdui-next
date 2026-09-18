@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   poll.
 - A description too long for the detail panel says how many lines are cut and
   pages on `PgUp`/`PgDn`, beside the list as well as over it.
+- The terminal tab is named `bdui - <workspace>`, so two open windows stay
+  apart. The shell's own title is saved at startup and put back on exit, and
+  the name costs no column, which is why the chrome rules carry the workspace
+  rather than the program's name.
 
 ### Removed
 - The dependency graph view. It grouped issues by blocker depth, but the level
