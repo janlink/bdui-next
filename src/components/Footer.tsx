@@ -9,7 +9,7 @@ import { Rule, segmentCells, words, type Segment } from './Rule';
 import type { GlyphSet } from '../session/glyphs';
 import type { Theme } from '../themes/themes';
 
-type ViewKey = 'kanban' | 'tree' | 'graph' | 'stats' | 'memories';
+type ViewKey = 'kanban' | 'tree' | 'stats' | 'memories';
 
 export interface FooterTrailer {
   above: number;
@@ -46,9 +46,8 @@ const MIN_NOTE_CELLS = 12;
 const VIEWS = [
   { key: 'tree', num: '1', name: VIEW_NAMES.tree },
   { key: 'kanban', num: '2', name: VIEW_NAMES.kanban },
-  { key: 'graph', num: '3', name: VIEW_NAMES.graph },
-  { key: 'stats', num: '4', name: VIEW_NAMES.stats },
-  { key: 'memories', num: '5', name: VIEW_NAMES.memories },
+  { key: 'stats', num: '3', name: VIEW_NAMES.stats },
+  { key: 'memories', num: '4', name: VIEW_NAMES.memories },
 ];
 
 // The order the hints leave in when the row runs short; help goes last.

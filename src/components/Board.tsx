@@ -5,7 +5,6 @@ import { StatusColumn } from './StatusColumn';
 import { DetailPanel } from './DetailPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { TreeView } from './TreeView';
-import { DependencyGraph } from './DependencyGraph';
 import { VisibilityPanel } from './VisibilityPanel';
 import { SearchInput } from './SearchInput';
 import { FilterPanel } from './FilterPanel';
@@ -226,13 +225,6 @@ export function Board() {
       {viewMode === 'kanban' && <KanbanView height={viewHeight} />}
       {viewMode === 'tree' && (
         <TreeView data={data} terminalWidth={terminalWidth} terminalHeight={viewHeight} />
-      )}
-      {viewMode === 'graph' && (
-        <DependencyGraph
-          data={data}
-          terminalWidth={terminalWidth}
-          terminalHeight={viewHeight}
-        />
       )}
       {viewMode === 'stats' && (
         <StatsView

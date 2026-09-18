@@ -242,16 +242,13 @@ export function App() {
       setViewMode('kanban');
     }
     if (input === '3') {
-      setViewMode('graph');
-    }
-    if (input === '4') {
       setViewMode('stats');
     }
-    if (input === '5') {
+    if (input === '4') {
       setViewMode('memories');
     }
 
-    // Only Kanban keeps selection in the store. List/tree/graph own their
+    // Only Kanban keeps selection in the store. The row views own their
     // navigation locally, so routing these keys through the store there would
     // trigger a wasted full-board re-render on every keypress. Edit and export
     // act on that selection, so those views handle them too.

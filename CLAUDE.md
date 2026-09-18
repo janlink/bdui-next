@@ -23,8 +23,8 @@ each commit in a pull request.
 ## Project overview
 
 BD TUI is an Ink/React terminal UI for current Beads workspaces. It displays a
-five-column Kanban board, tree and dependency views, statistics, filters,
-notifications, and issue forms.
+five-column Kanban board, a tree view, statistics, filters, notifications, and
+issue forms.
 
 The application treats the public `bd --json` CLI as its integration boundary.
 It does not query SQLite, Dolt SQL, or Beads' internal files.
@@ -135,8 +135,8 @@ it as context. Both row views must read this one selector.
 
 `App.tsx` owns workspace initialization, watcher lifetime, global input, and
 terminal resize handling. `Board.tsx` routes views and renders the responsive
-Kanban window. Tree and graph views keep local selection, so they must sync the
-exact selected issue ID into the store before opening edit/export actions.
+Kanban window. The tree view keeps local selection, so it must sync the exact
+selected issue ID into the store before opening edit/export actions.
 
 Input is modal. Normal navigation must not process keystrokes while search,
 filter, forms, dialogs, theme selection, help, or the command bar owns input.

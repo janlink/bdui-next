@@ -72,7 +72,7 @@ beforeEach(() => {
   });
 });
 
-const VIEW_MODES = ['kanban', 'tree', 'graph', 'stats'] as const;
+const VIEW_MODES = ['kanban', 'tree', 'stats'] as const;
 
 test('the search box and filter panel render in every view', async () => {
   for (const viewMode of VIEW_MODES) {

@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A description too long for the detail panel says how many lines are cut and
   pages on `PgUp`/`PgDn`, beside the list as well as over it.
 
+### Removed
+- The dependency graph view. It grouped issues by blocker depth, but the level
+  it computed collapsed: on a real workspace 74 of its 78 nodes sat on level 0
+  while the tree showed 153 rows. It also read only the status visibility, so
+  search and filter never reached it. Blocking is still shown where it is
+  precise: the tree marks a blocked row and the detail panel names what blocks
+  an issue and what it blocks. The views renumber to `1` Tree, `2` Kanban,
+  `3` Stats and `4` Memories, and `:graph` leaves the command bar.
+
 ### Changed
 - The tree view is redrawn as a quiet hierarchy: a priority gutter, the status
   glyph (a fold caret on parents), an ID column measured over the whole tree
@@ -35,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the row its trailer used to spend.
 - The detail panel is a borderless key/value grid with a progress bar for
   parents, the subtasks with their status, ISO timestamps, and the description
-  paged underneath; the side pane is 40 cells wide in Tree, Graph and Kanban.
+  paged underneath; the side pane is 40 cells wide in Tree and Kanban.
 - The footer rule carries the view tabs with the active one in the accent
   colour, the hidden statuses, and the rows above and below the scrolled
   window. Under it a second row holds the key hints for search, filter,

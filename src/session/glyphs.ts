@@ -43,8 +43,6 @@ export interface GlyphSet {
   checkboxOff: string;
   selectArrow: string;
   prompt: string;
-  graphBlocked: string;
-  graphEdge: string;
   arrowRight: string;
   arrowLeft: string;
   themeSwatch: string;
@@ -87,8 +85,6 @@ const FANCY: GlyphSet = {
   checkboxOff: '☐',
   selectArrow: '▶',
   prompt: '❯',
-  graphBlocked: '⊘',
-  graphEdge: '↳',
   arrowRight: '→',
   arrowLeft: '←',
   themeSwatch: '■',
@@ -126,8 +122,6 @@ const SAFE: GlyphSet = {
   checkboxOff: '[ ]',
   selectArrow: '>',
   prompt: '>',
-  graphBlocked: 'x',
-  graphEdge: '└─',
   arrowRight: '->',
   arrowLeft: '<-',
   themeSwatch: '█',
@@ -166,8 +160,6 @@ const ASCII: GlyphSet = {
   checkboxOff: '[ ]',
   selectArrow: '>',
   prompt: '>',
-  graphBlocked: 'x',
-  graphEdge: '-',
   arrowRight: '->',
   arrowLeft: '<-',
   themeSwatch: '#',

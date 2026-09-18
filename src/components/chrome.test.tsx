@@ -59,14 +59,14 @@ async function frameOf(
   return renderLines(<Board />, width, HEIGHT, { keepBlank: true });
 }
 
-const VIEWS = ['tree', 'graph', 'kanban', 'stats', 'memories'] as const;
+const VIEWS = ['tree', 'kanban', 'stats', 'memories'] as const;
 
 describe('view chrome', () => {
   for (const viewMode of VIEWS) {
     test(`${viewMode} fills exactly ${HEIGHT} rows and ends on the footer`, async () => {
       const lines = await frameOf({ viewMode });
       expect(lines).toHaveLength(HEIGHT);
-      expect(lines[HEIGHT - 2]).toMatch(/^─ 1 Tree ─ .*─ 5 Memories ─+/);
+      expect(lines[HEIGHT - 2]).toMatch(/^─ 1 Tree ─ .*─ 4 Memories ─+/);
       expect(lines[HEIGHT - 1]).toContain('? help');
       expect(lines[HEIGHT - 1]).toContain('deferred');
     });
@@ -171,7 +171,7 @@ describe('footer', () => {
 
   test('names the tabs and offers every hint when the rows are wide enough', async () => {
     const [rule, hints] = (await frameOf({ viewMode: 'tree' })).slice(HEIGHT - 2);
-    expect(rule).toContain('─ 1 Tree ─ 2 Kanban ─ 3 Graph ─ 4 Stats ─ 5 Memories ─');
+    expect(rule).toContain('─ 1 Tree ─ 2 Kanban ─ 3 Stats ─ 4 Memories ─');
     for (const word of ['search', 'filter', 'details', 'cmd', 'help']) expect(hints).toContain(word);
   });
 
@@ -189,17 +189,17 @@ describe('footer', () => {
   });
 
   test('brackets the active tab where no colour can mark it', async () => {
-    const lines = await frameOf({ viewMode: 'graph', theme: getTheme('default', 'none') });
-    expect(lines[HEIGHT - 2]).toContain('─ 1 Tree ─ 2 Kanban ─ [3 Graph] ─ 4 Stats ─');
+    const lines = await frameOf({ viewMode: 'stats', theme: getTheme('default', 'none') });
+    expect(lines[HEIGHT - 2]).toContain('─ 1 Tree ─ 2 Kanban ─ [3 Stats] ─ 4 Memories ─');
   });
 
   // The rule's right end, narrowing: the tab names go, the note shortens, the
   // note goes; the trailer stays to the last.
   test.each([
-    [96, '─ 1 Tree ─ 2 Kanban ─ 3 Graph ─ 4 Stats ─ 5 Memories ── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
-    [63, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
-    [60, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ── filter: closed hi… ─ ↑ 3  ↓ 17 more ─'],
-    [50, '─ 1 ─ 2 ─ 3 ─ 4 ─ 5 ───────────── ↑ 3  ↓ 17 more ─'],
+    [88, '─ 1 Tree ─ 2 Kanban ─ 3 Stats ─ 4 Memories ──── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
+    [63, '─ 1 ─ 2 ─ 3 ─ 4 ────── filter: closed hidden ─ ↑ 3  ↓ 17 more ─'],
+    [50, '─ 1 ─ 2 ─ 3 ─ 4 ── filter: clo… ─ ↑ 3  ↓ 17 more ─'],
+    [46, '─ 1 ─ 2 ─ 3 ─ 4 ───────────── ↑ 3  ↓ 17 more ─'],
   ])('at %i columns sets the trailer into the rule as %s', async (width, expected) => {
     useBeadsStore.setState({ terminalWidth: width, theme: getTheme('default', 'ansi256'), glyphs: getGlyphs('fancy') });
     const [rule] = await renderLines(<Footer currentView="tree" trailer={{ above: 3, below: 17 }} />, width);

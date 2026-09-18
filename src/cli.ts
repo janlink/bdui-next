@@ -22,8 +22,8 @@ const SAMPLE_SLOTS: (keyof GlyphSet)[] = [
   'statusOpen', 'statusInProgress', 'statusBlocked', 'statusClosed', 'statusDeferred',
   'statusOther', 'gutter', 'barDone', 'barEmpty', 'caretCollapsed', 'caretExpanded',
   'treeBranch', 'treeLast', 'treeVertical', 'treeDash', 'ellipsis', 'scrollUp',
-  'scrollDown', 'checkboxOn', 'checkboxOff', 'selectArrow', 'prompt', 'graphBlocked',
-  'graphEdge', 'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot', 'indicator',
+  'scrollDown', 'checkboxOn', 'checkboxOff', 'selectArrow', 'prompt',
+  'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot', 'indicator',
   'rule', 'ruleDown', 'ruleUp',
 ];
 

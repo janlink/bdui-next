@@ -85,10 +85,6 @@ export function CommandBar() {
       case 't':
         setViewMode('tree');
         return { success: true, message: 'Tree view' };
-      case 'graph':
-      case 'g':
-        setViewMode('graph');
-        return { success: true, message: 'Graph view' };
       case 'stats':
         setViewMode('stats');
         return { success: true, message: 'Stats view' };

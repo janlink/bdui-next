@@ -15,7 +15,6 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 ### 📊 Multiple Visualizations
 - **Kanban Board** - Five-column view (Open, In Progress, Blocked, Closed, Other)
 - **Tree View** - Hierarchical parent-child relationships with interactive navigation
-- **Dependency Graph** - ASCII art visualization of issue dependencies
 - **Statistics Dashboard** - Comprehensive analytics with visual bar charts
 
 ### 🎨 Rich User Experience
@@ -170,9 +169,8 @@ to.
 #### Views
 - `1` - Tree view (hierarchical, default)
 - `2` - Kanban board view
-- `3` - Dependency graph
-- `4` - Statistics dashboard
-- `5` - Memories
+- `3` - Statistics dashboard
+- `4` - Memories
 
 #### Actions
 - `N` (Shift+N) - Create new issue
@@ -238,14 +236,6 @@ the same thing in the same column on every row:
   their gutter, and the selected row is marked with a lifted background
 - Below the footer rule a second row holds the key hints, and from 120 columns
   on the status legend beside them
-
-### Dependency Graph
-Visualizes issue dependencies:
-- Issues organized by dependency levels
-- Shows blocking relationships
-- Navigate with ↑/↓ or k/j
-- Color-coded by type and status
-- Displays parent-child and blocking relationships
 
 ### Statistics Dashboard
 Comprehensive analytics:
@@ -365,8 +355,8 @@ The Kanban board fills the width with as many 24-cell columns as fit:
 
 With the detail panel open, a terminal of 90 columns or more shows the panel
 in a 40-cell pane beside the board; below that the panel replaces the board.
-The Tree and Graph views split at 107 columns, where the list keeps at least
-70 cells and the panel grows from 36 to 40. Beside the list the panel hangs in
+The Tree view splits at 107 columns, where the list keeps at least 70 cells
+and the panel grows from 36 to 40. Beside the list the panel hangs in
 the frame the view already draws: the rules fork at its border, name the issue
 above it and its keys below it, and the panel drops its own border. A
 description too long for it says how many lines are cut and pages on
@@ -425,7 +415,6 @@ bdui-next/
 │   │   ├── Footer.tsx    # The rule below it, plus the key hint row
 │   │   ├── Rule.tsx      # A horizontal rule with words set into it
 │   │   ├── DetailPanel.tsx
-│   │   ├── DependencyGraph.tsx
 │   │   ├── StatsView.tsx
 │   │   ├── CreateIssueForm.tsx
 │   │   ├── EditIssueForm.tsx
