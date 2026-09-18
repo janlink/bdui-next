@@ -151,6 +151,11 @@ painting a surface; at `none` it emits no escape sequence at all and marks the
 selection with the gutter. `BDUI_COLOR` overrides the detection in both
 directions, which `FORCE_COLOR` cannot do downward.
 
+**Window title.** bdui names the terminal tab `bdui - <workspace>` so several
+open windows stay apart, and puts the shell's own title back when it exits. The
+title is not part of the frame, so it costs no column; the chrome rules carry
+the workspace, not the program's name.
+
 **Ambiguous width.** Tree lines and status glyphs are East Asian Ambiguous, so
 terminals disagree about whether they take one cell or two. bdui measures it once
 at startup by printing one such character and asking for the cursor column; a
@@ -433,7 +438,8 @@ bdui-next/
 │   ├── session/          # Terminal capabilities resolved once at startup
 │   │   ├── glyphs.ts     # The three character sets and the tier switch
 │   │   ├── colors.ts     # Color depth and the chalk level it implies
-│   │   └── ambiguous.ts  # East Asian Ambiguous width probe
+│   │   ├── ambiguous.ts  # East Asian Ambiguous width probe
+│   │   └── window-title.ts # The tab title, pushed and popped around the session
 │   ├── state/            # State management
 │   │   └── store.ts      # Zustand store
 │   ├── themes/           # Theme definitions
