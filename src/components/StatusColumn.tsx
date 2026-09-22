@@ -1,10 +1,14 @@
 import React from 'react';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 import type { Issue } from '../types';
 import { IssueCard } from './IssueCard';
 import { useBeadsStore } from '../state/store';
 import { LAYOUT, getStatusColor } from '../utils/constants';
 import { Rule, words } from './Rule';
+
+// A collapsed column keeps this many cells: one of padding, one letter, one of
+// padding, so its spine lines up with the padded content of a full column.
+export const STRIP_WIDTH = 3;
 
 interface StatusColumnProps {
   title: string;
@@ -15,12 +19,15 @@ interface StatusColumnProps {
   itemsPerPage: number;
   statusKey: string;
   width?: number;
+  collapsed?: boolean;
 }
 
 // The column is a labelled rule over a stack of cards. The global header carries
 // the position and the footer the paging, so the column keeps neither; it spends
 // one row on its name and gives the rest to whole cards, drawn without a gap so
 // the band that runs down each card is the only thing between one and the next.
+// A collapsed column drops to a spine of vertical letters, its count below, so an
+// empty or windowed-out column stays in place at a fraction of the width.
 export function StatusColumn({
   title,
   issues,
@@ -30,12 +37,29 @@ export function StatusColumn({
   itemsPerPage,
   statusKey,
   width = LAYOUT.columnWidth,
+  collapsed = false,
 }: StatusColumnProps) {
   const glyphs = useBeadsStore(state => state.glyphs);
   const theme = useBeadsStore(state => state.theme);
+  const headColor = isActive ? theme.colors.primary : getStatusColor(statusKey, theme);
+
+  if (collapsed) {
+    const letters = [...title.replace(/\s+/g, '')];
+    const count = issues.length > 0 ? [...String(issues.length)] : [];
+    return (
+      <Box flexDirection="column" width={STRIP_WIDTH} paddingX={1}>
+        {letters.map((letter, index) => (
+          <Text key={`l${index}`} color={headColor} bold={isActive}>{letter}</Text>
+        ))}
+        {count.length > 0 ? <Text {...theme.ink.faint}>{glyphs.rule}</Text> : null}
+        {count.map((digit, index) => (
+          <Text key={`c${index}`} {...theme.ink.dim}>{digit}</Text>
+        ))}
+      </Box>
+    );
+  }
 
   const visibleIssues = issues.slice(scrollOffset, scrollOffset + itemsPerPage);
-  const headColor = isActive ? theme.colors.primary : getStatusColor(statusKey, theme);
   const inner = width - 2;
 
   return (
