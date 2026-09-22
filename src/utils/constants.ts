@@ -100,7 +100,7 @@ export type ListView = 'tree' | 'memories' | 'kanban' | 'stats';
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
   tree: { body: 4, panel: 3 },
   memories: { body: 3, panel: 3 },
-  kanban: { body: 13, panel: 3 },
+  kanban: { body: 4, panel: 3 },
   stats: { body: 3, panel: 3 },
 };
 

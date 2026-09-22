@@ -222,10 +222,10 @@ test('the board pages in whole cards against the height it was given', () => {
   store.setChromeHeight(0);
 
   store.setTerminalSize(140, 45);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(10);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(13);
 
   store.setTerminalSize(140, 61);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(16);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(19);
 });
 
 test('chrome above the board costs it a page of cards', () => {
@@ -234,7 +234,7 @@ test('chrome above the board costs it a page of cards', () => {
   store.setTerminalSize(140, 61);
 
   store.setChromeHeight(16);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(10);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(13);
 });
 
 test('a resized page keeps the selected card on screen', () => {
