@@ -226,7 +226,6 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update issue');
-      showToast('Failed to update issue', 'error');
       setIsSubmitting(false);
     }
   };

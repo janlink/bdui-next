@@ -166,7 +166,6 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create issue');
-      showToast('Failed to create issue', 'error');
       setIsSubmitting(false);
     }
   };
