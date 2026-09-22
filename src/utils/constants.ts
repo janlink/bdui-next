@@ -6,6 +6,9 @@ export const LAYOUT = {
   columnWidth: 37,
   detailPanelWidth: 40,
   issueCardHeight: 8,
+  // Rows one Kanban card occupies, so the board pages in whole cards. Distinct
+  // from issueCardHeight, which floors the view height rather than a card.
+  kanbanCardHeight: 3,
   titleMaxLength: 32,
   descriptionMaxLength: 200,
   minTerminalWidth: 60,
