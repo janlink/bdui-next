@@ -95,6 +95,15 @@ describe('glyph tier', () => {
     expect(getGlyphs('safe').border('double')).toBe('double');
     expect(getGlyphs('ascii').border('double')).toBe('classic');
   });
+
+  test('carries a single-glyph card band per tier', () => {
+    expect(getGlyphs('fancy').band).toBe('▏');
+    expect(getGlyphs('safe').band).toBe('│');
+    expect(getGlyphs('ascii').band).toBe('|');
+    for (const tier of GLYPH_TIERS) {
+      expect([...getGlyphs(tier).band]).toHaveLength(1);
+    }
+  });
 });
 
 describe('ambiguous width', () => {
