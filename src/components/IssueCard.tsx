@@ -6,6 +6,7 @@ import { useBeadsStore } from '../state/store';
 import { cellWidthOf } from '../session/glyphs';
 import { fitToWidth, padEndCells } from '../utils/cells';
 import { wrapTitle } from './DetailPanel';
+import { withChange } from './IssueRow';
 import {
   getPriorityColor,
   getStatusColor,
@@ -64,6 +65,7 @@ export function IssueCard({
 }: IssueCardProps) {
   const glyphs = useBeadsStore(state => state.glyphs);
   const theme = useBeadsStore(state => state.theme);
+  const change = useBeadsStore(state => state.recentChanges.get(issue.id)?.kind);
 
   const ink = isSelected ? theme.inkSelected : theme.ink;
   // Inverse swaps foreground and background per span, so a selected 16-colour
@@ -96,7 +98,7 @@ export function IssueCard({
   const priorityInk = { color: hue(getPriorityColor(issue.priority, theme)) };
 
   // Right-aligned meta first, then id and type share what is left of the row.
-  const meta = cardMeta(issue, theme, ink);
+  const meta = withChange(cardMeta(issue, theme, ink), change, theme, glyphs);
   const metaCells = Math.min(stringWidth(meta.text), Math.max(0, content - 2));
   const metaText = metaCells > 0 ? fitToWidth(meta.text, metaCells, glyphs.ellipsis) : '';
   const metaInk = meta.style ? rung(meta.style) : { color: hue(meta.color ?? theme.colors.textDim) };

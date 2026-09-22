@@ -20,6 +20,7 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 
 ### 🎨 Rich User Experience
 - **Real-time Updates** - Serialized polling through the supported `bd` CLI
+- **Change Badges** - Issues a refresh added or changed carry a `✱` before their meta text for a few seconds (green new, yellow changed)
 - **Search & Filter** - Full-text search across title, description, and ID
 - **Custom Themes** - 5 built-in color schemes (Default, Ocean, Forest, Sunset, Monochrome)
 - **Responsive Layout** - Adapts to terminal size with smart column hiding

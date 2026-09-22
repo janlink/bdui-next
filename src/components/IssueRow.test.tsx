@@ -122,6 +122,23 @@ describe('row content', () => {
     }
   });
 
+  test.each([...GLYPH_TIERS])('a recent change leads the meta column with its marker (%s)', async (tier) => {
+    const tierGlyphs = getGlyphs(tier);
+    const leaf = nodes[2]!;
+    const [plain] = await renderLines(
+      <ListRow node={leaf} isSelected={false} theme={theme} glyphs={tierGlyphs} width={70} />,
+      70,
+    );
+    const [marked] = await renderLines(
+      <ListRow node={leaf} isSelected={false} theme={theme} glyphs={tierGlyphs} width={70} change="changed" />,
+      70,
+    );
+    expect(stringWidth(marked!)).toBe(70);
+    expect(marked!.endsWith(`${tierGlyphs.changed} P3`)).toBe(true);
+    // The gutter keeps the priority bar; only the meta column carries the change.
+    expect([...marked!][0]).toBe([...plain!][0]);
+  });
+
   test('ends a parent row with closed over total, whatever the progress', async () => {
     for (const closed of [0, 1, 2, 3]) {
       const parent = { ...nodes[0]!, issue: { ...nodes[0]!.issue, progress: { closed, total: 3, percent: 0 } } };

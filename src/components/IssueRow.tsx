@@ -7,6 +7,7 @@ import type { GlyphSet } from '../session/glyphs';
 import type { Ladder, Theme, TextStyle } from '../themes/themes';
 import type { FlatNode } from '../utils/tree';
 import type { Issue } from '../types';
+import type { ChangeKind } from '../utils/changes';
 
 // Ink tokenizes, wraps and slices every text node once per frame, so a row costs
 // far less as a single text node with nested spans than as a Box of siblings.
@@ -21,6 +22,7 @@ interface RowProps {
   width: number;
   /** The id column measured over the whole tree; the grid's floor when absent. */
   idWidth?: number;
+  change?: ChangeKind;
 }
 
 // Blocked is a presentation status, so it wins over the raw one.
@@ -69,6 +71,15 @@ export function rowMeta(issue: Issue, theme: Theme, ink: Ladder): RowMeta {
   }
 }
 
+/** A recent change leads the meta text with its marker, in the change's colour. */
+export function withChange(meta: RowMeta, change: ChangeKind | undefined, theme: Theme, glyphs: GlyphSet): RowMeta {
+  if (!change) return meta;
+  return {
+    text: `${glyphs.changed} ${meta.text}`.trimEnd(),
+    color: change === 'new' ? theme.colors.success : theme.colors.warning,
+  };
+}
+
 export function branchOf(node: FlatNode, glyphs: GlyphSet): string {
   const stem = node.prefix.replaceAll('│', glyphs.treeVertical);
   if (node.depth === 0) return stem;
@@ -96,7 +107,7 @@ export function idColumnWidth(nodes: readonly FlatNode[], glyphs: GlyphSet, widt
 
 const NO_SELECTION = {} as const;
 
-function ListRowImpl({ node, isSelected, theme, glyphs, width, idWidth }: RowProps) {
+function ListRowImpl({ node, isSelected, theme, glyphs, width, idWidth, change }: RowProps) {
   const { issue } = node;
   const grid = rowLayout(width, glyphs, idWidth);
   const ink = isSelected ? theme.inkSelected : theme.ink;
@@ -129,7 +140,7 @@ function ListRowImpl({ node, isSelected, theme, glyphs, width, idWidth }: RowPro
     ? rung(ink.dim)
     : { color: hue(getStatusColor(issue.displayStatus, theme)) };
   const typeInk = closed ? rung(ink.faint) : { color: hue(getTypeColor(issue.issue_type, theme)) };
-  const meta = rowMeta(issue, theme, ink);
+  const meta = withChange(rowMeta(issue, theme, ink), change, theme, glyphs);
   const metaInk = meta.style ? rung(meta.style) : { color: hue(meta.color ?? '') };
   // Closed work is done arguing about urgency; its gutter goes grey with the row.
   const gutterInk = closed ? rung(ink.rule) : { color: hue(getPriorityColor(issue.priority, theme)) };

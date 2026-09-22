@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   apart. The shell's own title is saved at startup and put back on exit, and
   the name costs no column, which is why the chrome rules carry the workspace
   rather than the program's name.
+- Change badges: an issue a refresh added or changed carries a `✱` (`*` in the
+  `safe` and `ascii` tiers) before its meta text for five seconds, green when
+  new, yellow when changed. Only fields bd reports count, so a parent is not
+  marked because one of its children moved. The first load marks nothing.
 
 ### Removed
 - The dependency graph view. It grouped issues by blocker depth, but the level

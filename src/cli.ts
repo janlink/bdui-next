@@ -23,7 +23,7 @@ const SAMPLE_SLOTS: (keyof GlyphSet)[] = [
   'statusOther', 'gutter', 'barDone', 'barEmpty', 'caretCollapsed', 'caretExpanded',
   'treeBranch', 'treeLast', 'treeVertical', 'treeDash', 'ellipsis', 'scrollUp',
   'scrollDown', 'checkboxOn', 'checkboxOff', 'selectArrow', 'prompt',
-  'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot', 'indicator',
+  'arrowRight', 'arrowLeft', 'themeSwatch', 'bullet', 'middot', 'indicator', 'changed',
   'rule', 'ruleDown', 'ruleUp',
 ];
 

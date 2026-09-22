@@ -9,7 +9,7 @@ export interface BeadsWatcherOptions {
   onError?: (error: unknown) => void;
 }
 
-function canonicalize(value: unknown): unknown {
+export function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (value && typeof value === 'object') {
     return Object.fromEntries(

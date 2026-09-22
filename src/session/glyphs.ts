@@ -52,6 +52,8 @@ export interface GlyphSet {
   middot: string;
   /** The dot before the live/stale word in the header. */
   indicator: string;
+  /** Marks an issue a recent reload added or changed. */
+  changed: string;
   /** The Enter key, as the footer names it. */
   enter: string;
   /** The chrome rules and the junctions where the panel's border meets them. */
@@ -94,6 +96,7 @@ const FANCY: GlyphSet = {
   bullet: '•',
   middot: '·',
   indicator: '●',
+  changed: '✱',
   enter: '↵',
   rule: '─',
   ruleDown: '┬',
@@ -132,6 +135,7 @@ const SAFE: GlyphSet = {
   bullet: '•',
   middot: '·',
   indicator: '■',
+  changed: '*',
   enter: 'Enter',
   rule: '─',
   ruleDown: '┬',
@@ -171,6 +175,7 @@ const ASCII: GlyphSet = {
   bullet: '*',
   middot: '.',
   indicator: '*',
+  changed: '*',
   enter: 'Enter',
   rule: '-',
   ruleDown: '+',
