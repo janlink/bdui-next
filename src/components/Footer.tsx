@@ -53,7 +53,7 @@ const VIEWS = [
 // The order the hints leave in when the row runs short; help goes last.
 const DROP_ORDER: readonly HintWord[] = ['cmd', 'details', 'refresh', 'delete', 'filter', 'search', 'move', 'help'];
 
-// ASCII in every glyph tier, so a toast reads the same over SSH and in ascii.
+// Plain ASCII, so the icons hold in every glyph tier.
 const TOAST_ICONS = { success: '[OK]', error: '[!]', info: '[i]' } as const;
 
 const LEGEND: ReadonlyArray<[glyph: StatusGlyph, color: keyof Theme['colors'], word: string]> = [

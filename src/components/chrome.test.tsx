@@ -228,8 +228,8 @@ describe('footer', () => {
     expect(lines[1]).toContain('r refresh');
   });
 
-  // The toast used to hang absolutely over the header, where the view painted
-  // over it. It now takes the hints row, so it can neither hide nor move a row.
+  // A toast shares a row the frame already has: an absolute overlay is painted
+  // over by the view below it, and an extra row would push the view down.
   test('a toast takes the hints row over and leaves the rule alone', async () => {
     const toastMessage = { id: 't', message: 'Data refreshed', type: 'info' as const, timestamp: 0 };
     const lines = await frameOf({ viewMode: 'tree', toastMessage });
