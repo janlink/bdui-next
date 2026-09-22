@@ -53,6 +53,9 @@ const VIEWS = [
 // The order the hints leave in when the row runs short; help goes last.
 const DROP_ORDER: readonly HintWord[] = ['cmd', 'details', 'refresh', 'delete', 'filter', 'search', 'move', 'help'];
 
+// ASCII in every glyph tier, so a toast reads the same over SSH and in ascii.
+const TOAST_ICONS = { success: '[OK]', error: '[!]', info: '[i]' } as const;
+
 const LEGEND: ReadonlyArray<[glyph: StatusGlyph, color: keyof Theme['colors'], word: string]> = [
   ['statusOpen', 'statusOpen', 'open'],
   ['statusInProgress', 'statusInProgress', 'in progress'],
@@ -142,7 +145,8 @@ function trailerText(trailer: FooterTrailer | undefined, glyphs: GlyphSet): stri
  * Two rows under every view. The rule carries the view tabs, the filter note
  * and the scroll trailer, and beside a detail panel closes the panel's border
  * and names its keys. The row beneath holds the key hints, the status legend on
- * a wide terminal, and the notification switch.
+ * a wide terminal, and the notification switch; a toast takes that row over
+ * for as long as it shows, cut to fit, so it never covers the view or moves it.
  */
 export function Footer({ currentView, trailer, panel }: FooterProps) {
   const theme = useBeadsStore(state => state.theme);
@@ -150,6 +154,7 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
   const notificationsEnabled = useBeadsStore(state => state.notificationsEnabled);
   const statusVisibility = useBeadsStore(state => state.statusVisibility);
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
+  const toast = useBeadsStore(state => state.toastMessage);
 
   const listWidth = panel ? terminalWidth - panel.width - 1 : terminalWidth;
   const hidden = STATUS_KEYS.filter(key => !statusVisibility[key]).map(key => STATUS_LABELS[key].toLowerCase());
@@ -167,6 +172,7 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
   const inner = Math.max(0, terminalWidth - PADDING * 2);
   const gap = ' '.repeat(GAP);
   const noticeWord = notificationsEnabled ? 'on' : 'off';
+  const toastColors = { success: theme.colors.success, error: theme.colors.error, info: theme.colors.primary };
   const row = fitHintsRow(
     inner,
     hintsOf(currentView, glyphs),
@@ -202,6 +208,13 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
           />
         )}
       </Box>
+      {toast ? (
+        <Box paddingX={PADDING}>
+          <Text color={toastColors[toast.type]} bold wrap="truncate-end">
+            {fitToWidth(`${TOAST_ICONS[toast.type]} ${toast.message}`, inner, glyphs.ellipsis)}
+          </Text>
+        </Box>
+      ) : (
       <Box paddingX={PADDING} justifyContent="space-between">
         <Text wrap="truncate-end">
           {row.hints.map(([key, word], index) => (
@@ -224,6 +237,7 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
           <Text {...(notificationsEnabled ? { color: theme.colors.primary } : theme.ink.faint)}> {noticeWord}</Text>
         </Text>
       </Box>
+      )}
     </Box>
   );
 }

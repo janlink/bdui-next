@@ -82,6 +82,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   East Asian Ambiguous glyphs no longer shift columns.
 
 ### Fixed
+- Toasts were never visible: the box hung absolutely over the header, and the
+  view painted over it. A toast now takes the key hints row under the footer
+  rule for its three seconds, cut to one row with the glyph set's ellipsis, so
+  it neither covers the view nor moves it. The create and edit forms keep their
+  own error line instead of raising a second, duplicate toast.
 - Under Bun the terminal probe could leave stdin paused, so the UI rendered but
   ignored every key including `Ctrl+C`; the probe now reads the way Ink does.
 - The export dialog stays mounted for as long as its flag is set, so `x` can no

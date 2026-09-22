@@ -228,6 +228,32 @@ describe('footer', () => {
     expect(lines[1]).toContain('r refresh');
   });
 
+  // The toast used to hang absolutely over the header, where the view painted
+  // over it. It now takes the hints row, so it can neither hide nor move a row.
+  test('a toast takes the hints row over and leaves the rule alone', async () => {
+    const toastMessage = { id: 't', message: 'Data refreshed', type: 'info' as const, timestamp: 0 };
+    const lines = await frameOf({ viewMode: 'tree', toastMessage });
+    const plain = await frameOf({ viewMode: 'tree' });
+    expect(lines).toHaveLength(HEIGHT);
+    expect(lines[HEIGHT - 1]).toBe(' [i] Data refreshed');
+    expect(lines[HEIGHT - 2]).toBe(plain[HEIGHT - 2]);
+    expect(lines.slice(0, HEIGHT - 1)).toEqual(plain.slice(0, HEIGHT - 1));
+  });
+
+  test.each([
+    ['fancy', '…'],
+    ['ascii', '~'],
+  ] as const)('cuts a long toast to one row with the %s ellipsis', async (tier, ellipsis) => {
+    const width = 70;
+    const toastMessage = { id: 't', message: 'bd update exited 1: '.repeat(10), type: 'error' as const, timestamp: 0 };
+    const lines = await frameOf({ viewMode: 'kanban', toastMessage, glyphs: getGlyphs(tier) }, width);
+    const row = lines[HEIGHT - 1]!;
+    expect(lines).toHaveLength(HEIGHT);
+    expect(row.startsWith(' [!] bd update exited 1:')).toBe(true);
+    expect(row.endsWith(ellipsis)).toBe(true);
+    expect(stringWidth(row)).toBe(width - 1);
+  });
+
   // The rule's right end, narrowing: the tab names go, the note shortens, the
   // note goes; the trailer stays to the last.
   test.each([

@@ -14,7 +14,6 @@ import { ExportDialog } from './ExportDialog';
 import { ThemeSelector } from './ThemeSelector';
 import { StatsView } from './StatsView';
 import { MemoriesView } from './MemoriesView';
-import { Toast } from './Toast';
 import { FiltersBanner } from './FiltersBanner';
 import { ConfirmDialog } from './ConfirmDialog';
 import { CommandBar } from './CommandBar';
@@ -251,7 +250,6 @@ export function Board() {
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
       {/* Shared chrome above every view */}
-      <Toast />
       <FiltersBanner />
       {showSearch && <SearchInput />}
       {showFilter && <FilterPanel />}
