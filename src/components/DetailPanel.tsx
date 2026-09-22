@@ -73,11 +73,16 @@ export function getDescriptionPage(
 /** Rows a title may take before its tail is cut. */
 export const TITLE_MAX_LINES = 3;
 
-export function wrapTitle(title: string, lineWidth: number, ellipsis: string): string[] {
+export function wrapTitle(
+  title: string,
+  lineWidth: number,
+  ellipsis: string,
+  maxLines: number = TITLE_MAX_LINES,
+): string[] {
   const lines = wrapDescriptionLine(title, lineWidth);
-  if (lines.length <= TITLE_MAX_LINES) return lines;
-  const kept = lines.slice(0, TITLE_MAX_LINES - 1);
-  const rest = lines.slice(TITLE_MAX_LINES - 1).join('');
+  if (lines.length <= maxLines) return lines;
+  const kept = lines.slice(0, maxLines - 1);
+  const rest = lines.slice(maxLines - 1).join('');
   return [...kept, fitToWidth(rest, lineWidth, ellipsis)];
 }
 
