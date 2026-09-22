@@ -8,7 +8,7 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)
 ![Bun](https://img.shields.io/badge/runtime-Bun-f472b6.svg)
 
-![BD TUI walkthrough: tree, kanban, and statistics views](assets/demo.gif)
+![BD TUI walkthrough: tree, kanban, statistics, and memories views](assets/demo.gif)
 
 ## ✨ Features
 
@@ -420,7 +420,7 @@ bun run demo
 
 This seeds a deterministic Beads workspace, drives the compiled binary through
 a pseudo-terminal with the keystroke tape `demo/board.tape`, and renders
-`assets/demo.gif` and `assets/demo.png` with [agg](https://github.com/asciinema/agg).
+`assets/demo.gif` with [agg](https://github.com/asciinema/agg).
 It needs `agg` and `python3`. See `demo/README.md` for how to add a tape.
 
 ## 🏗️ Architecture

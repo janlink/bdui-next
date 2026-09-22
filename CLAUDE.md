@@ -183,11 +183,11 @@ For interaction changes, also run the compiled TUI in a real terminal against a
 representative current Beads workspace. Exercise each changed key path once;
 builds and unit tests are not a substitute for rendered interaction checks.
 
-For reproducible demo GIFs and screenshots, use the browser-free capture
+For reproducible demo GIFs, use the browser-free capture
 pipeline in `demo/`: `bun run demo` seeds a deterministic Beads workspace, drives
 the compiled binary through a pseudo-terminal with a keystroke tape
 (`demo/board.tape`), records the raw output as an asciicast, and renders it to
-`assets/demo.gif` (plus a still `assets/demo.png`) with `agg`. It needs `agg`
+`assets/demo.gif` with `agg`. It needs `agg`
 (`brew install agg`) and `python3`; see `demo/README.md` for how to add a tape.
 
 For a quick headless text check with no assets, allocate a PTY with `script` and

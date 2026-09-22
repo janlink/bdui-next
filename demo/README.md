@@ -1,13 +1,13 @@
 # Demo captures
 
-Reproducible GIFs and screenshots of `bdui`, produced by a **browser-free**
+Reproducible demo GIFs of `bdui`, produced by a **browser-free**
 pipeline. It replaces ad-hoc `script`/`stty` captures and does not depend on VHS
 (whose headless-Chromium recorder does not render under WSL2).
 
 ```
 seed.sh ──▶ .workspace ──▶ record.py ──▶ board.cast ──▶ agg ──▶ demo.gif
-(fixed bd    (throwaway     (PTY + timed   (asciicast    (Rust,   (+ demo.png
- workspace)   Dolt repo)     keystrokes)    v2)           no browser)  still)
+(fixed bd    (throwaway     (PTY + timed   (asciicast    (Rust,
+ workspace)   Dolt repo)     keystrokes)    v2)           no browser)
 ```
 
 - **`seed.sh <dir>`** builds a deterministic Beads workspace: fixed issue IDs,
@@ -19,8 +19,7 @@ seed.sh ──▶ .workspace ──▶ record.py ──▶ board.cast ──▶ 
   [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) file. `agg`
   owns the terminal emulation, so control bytes are recorded verbatim.
 - **`board.tape`** is the keystroke script (see the grammar in `record.py`).
-- **`render.sh`** ties it together and writes `assets/demo.gif` and a still
-  `assets/demo.png`.
+- **`render.sh`** ties it together and writes `assets/demo.gif`.
 
 ## Regenerate
 
@@ -32,11 +31,10 @@ Prerequisites:
 
 - `agg` — `brew install agg` (Asciicast-to-GIF converter)
 - `python3` — standard library only, no packages
-- `ffmpeg` — optional, only for the `assets/demo.png` still
 - a `bdui` binary at the repo root (built with `bun run build` if absent)
 
 The workspace (`demo/.workspace/`) and the intermediate cast (`demo/*.cast`) are
-git-ignored; the committed outputs are `assets/demo.gif` and `assets/demo.png`.
+git-ignored; the committed output is `assets/demo.gif`.
 
 ## Add or change a tape
 
@@ -53,6 +51,3 @@ To record a different flow, copy `board.tape`, adjust the keys, and point
 `record.py --tape` at it (or add a case to `render.sh`). Views: `1` Tree,
 `2` Kanban, `3` Statistics, `4` Memories. Keep dwell times generous — a view is
 only captured while it is on screen.
-
-> The Memories view (`4`) loads asynchronously and does not settle during a
-> headless capture, so `board.tape` skips it. See issue tracking for details.
