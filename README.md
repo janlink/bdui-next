@@ -420,7 +420,7 @@ bun run demo
 
 This seeds a deterministic Beads workspace, drives the compiled binary through
 a pseudo-terminal with the keystroke tape `demo/board.tape`, and renders
-`assets/demo.gif` and `assets/demo.png` with [agg](https://github.com/asciinema/agg).
+`assets/demo.gif` with [agg](https://github.com/asciinema/agg).
 It needs `agg` and `python3`. See `demo/README.md` for how to add a tape.
 
 ## 🏗️ Architecture
