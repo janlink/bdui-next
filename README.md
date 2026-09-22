@@ -8,7 +8,7 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)
 ![Bun](https://img.shields.io/badge/runtime-Bun-f472b6.svg)
 
-![BD TUI walkthrough: tree, kanban, and statistics views](assets/demo.gif)
+![BD TUI walkthrough: tree, kanban, statistics, and memories views](assets/demo.gif)
 
 ## ✨ Features
 

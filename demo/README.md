@@ -53,6 +53,3 @@ To record a different flow, copy `board.tape`, adjust the keys, and point
 `record.py --tape` at it (or add a case to `render.sh`). Views: `1` Tree,
 `2` Kanban, `3` Statistics, `4` Memories. Keep dwell times generous — a view is
 only captured while it is on screen.
-
-> The Memories view (`4`) loads asynchronously and does not settle during a
-> headless capture, so `board.tape` skips it. See issue tracking for details.
