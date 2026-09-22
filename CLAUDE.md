@@ -53,6 +53,10 @@ bun run build:all
 The release workflow must pass `bun run check` before building platform
 artifacts.
 
+CI also runs `bun audit --audit-level=high` as a separate step. Fix a finding
+by raising the transitive version through `overrides` in `package.json`, not by
+ignoring it.
+
 ## Architecture
 
 ### Render hot path (`patches/string-width-bun`)

@@ -36,3 +36,7 @@ jobs:
 
       - name: Run quality gates
         run: bun run check
+
+      - name: Audit dependencies
+        if: ${{ !cancelled() }}
+        run: bun audit --audit-level=high
