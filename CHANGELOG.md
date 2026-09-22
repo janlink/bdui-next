@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-22
+
 ### Added
 - Session axes for what a terminal cannot tell us: `BDUI_GLYPHS` picks the
   character set (`fancy`, `safe`, `ascii`; `--glyph-check` prints them side by

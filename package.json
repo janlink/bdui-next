@@ -1,6 +1,6 @@
 {
   "name": "bdui",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "TUI visualizer for bd (beads) issue tracker",
   "author": "janlink",
   "repository": {
