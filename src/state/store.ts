@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { BeadsData, Issue } from '../types';
 import { detectStatusChanges, notifyStatusChange } from '../utils/notifications';
+import { detectChanges, RECENT_CHANGE_MS, type RecentChange } from '../utils/changes';
 import { LAYOUT, listBudget, hasActiveFilters } from '../utils/constants';
 import { DEFAULT_COLOR_DEPTH, type ColorDepth } from '../session/colors';
 import { DEFAULT_GLYPH_TIER, getGlyphs, type GlyphSet, type GlyphTier } from '../session/glyphs';
@@ -64,6 +65,9 @@ interface UndoEntry {
 export interface BeadsStore {
   data: BeadsData;
   previousIssues: Map<string, Issue>; // Track previous state for notifications
+  // Issues a reload added or changed, badged until they expire. A load after an
+  // empty snapshot, the first one included, has nothing to compare and marks none.
+  recentChanges: ReadonlyMap<string, RecentChange>;
   reloadCallback: (() => void) | null; // Callback to reload data from database
   beadsPath: string | null; // Active .beads directory, used for out-of-band reads (memories)
   workspaceName: string | null; // Basename of the workspace the .beads directory belongs to
@@ -127,6 +131,7 @@ export interface BeadsStore {
 
   // Actions
   setData: (data: BeadsData) => void;
+  pruneRecentChanges: (now?: number) => void;
   setReloadCallback: (callback: (() => void) | null) => void;
   setBeadsPath: (path: string | null) => void;
   setWorkspaceName: (name: string | null) => void;
@@ -307,6 +312,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   glyphs: getGlyphs(DEFAULT_GLYPH_TIER),
   searchQuery: '',
   notificationsEnabled: true, // Enabled by default
+  recentChanges: new Map(),
 
   // Toast messages
   toastMessage: null,
@@ -354,12 +360,29 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
       };
     }
 
+    const recentChanges = new Map(
+      [...state.recentChanges].filter(([id]) => data.byId.has(id)),
+    );
+    if (state.previousIssues.size > 0) {
+      const expiresAt = Date.now() + RECENT_CHANGE_MS;
+      const changes = detectChanges(state.previousIssues, data.byId);
+      for (const [id, kind] of changes) recentChanges.set(id, { kind, expiresAt });
+      if (changes.size > 0) setTimeout(() => get().pruneRecentChanges(), RECENT_CHANGE_MS);
+    }
+
     // Update state
     set({
       data,
       previousIssues: new Map(data.byId), // Clone for next comparison
+      recentChanges,
       columnStates: newColumnStates,
     });
+  },
+
+  pruneRecentChanges: (now = Date.now()) => {
+    const current = get().recentChanges;
+    const kept = new Map([...current].filter(([, change]) => change.expiresAt > now));
+    if (kept.size !== current.size) set({ recentChanges: kept });
   },
 
   setReloadCallback: (callback) => set({ reloadCallback: callback }),

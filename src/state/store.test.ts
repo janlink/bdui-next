@@ -266,3 +266,41 @@ test('the page size is the whole-card capacity of the height the board was given
     expect(useBeadsStore.getState().itemsPerPage).toBe(expected);
   }
 });
+
+test('the first load badges nothing; later reloads badge what changed until it expires', () => {
+  const store = useBeadsStore.getState();
+  store.setData(data());
+  expect(useBeadsStore.getState().recentChanges.size).toBe(0);
+
+  const before = Date.now();
+  store.setData(normalizeBeads([
+    { id: 'issue-hidden', title: 'Hidden card', status: 'open', issue_type: 'task', priority: 2 },
+    { id: 'issue-visible', title: 'Visible target', status: 'in_progress', issue_type: 'bug', priority: 1 },
+    { id: 'issue-third', title: 'Third card', status: 'open', issue_type: 'task', priority: 3 },
+    { id: 'issue-new', title: 'New card', status: 'open', issue_type: 'task', priority: 2 },
+  ]));
+  const changes = useBeadsStore.getState().recentChanges;
+  expect([...changes].map(([id, change]) => [id, change.kind])).toEqual([
+    ['issue-visible', 'changed'],
+    ['issue-new', 'new'],
+  ]);
+
+  const expiresAt = changes.get('issue-new')!.expiresAt;
+  expect(expiresAt).toBeGreaterThan(before);
+  store.pruneRecentChanges(expiresAt - 1);
+  expect(useBeadsStore.getState().recentChanges.size).toBe(2);
+  store.pruneRecentChanges(expiresAt);
+  expect(useBeadsStore.getState().recentChanges.size).toBe(0);
+});
+
+test('a badged issue that disappears drops its badge on the next load', () => {
+  const store = useBeadsStore.getState();
+  store.setData(data());
+  store.setData(normalizeBeads([
+    ...data().issues,
+    { id: 'issue-new', title: 'New card', status: 'open', issue_type: 'task', priority: 2 },
+  ]));
+  expect(useBeadsStore.getState().recentChanges.has('issue-new')).toBe(true);
+  store.setData(data());
+  expect(useBeadsStore.getState().recentChanges.has('issue-new')).toBe(false);
+});

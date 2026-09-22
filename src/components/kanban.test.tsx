@@ -56,6 +56,14 @@ describe('kanban card', () => {
     expect(follower[0]!.startsWith(' P2 ')).toBe(true);
   });
 
+  test('a recent change leads the third row\'s meta with its marker', async () => {
+    arrange();
+    useBeadsStore.setState({ recentChanges: new Map([['op-1', { kind: 'new', expiresAt: Infinity }]]) });
+    const lines = await renderLines(<IssueCard issue={short} width={35} />, 40, 10);
+    expect(lines[2]!.trimEnd().endsWith(glyphs.changed)).toBe(true);
+    expect(lines[2]).toContain('op-1');
+  });
+
   test('selection swaps the thin band for the heavy gutter on every row, top included', async () => {
     arrange();
     const lines = await renderLines(<IssueCard issue={short} width={35} isSelected bandBreak />, 40, 10, { keepBlank: true });

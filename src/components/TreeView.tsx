@@ -20,6 +20,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   const showDetails = useBeadsStore(state => state.showDetails);
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
+  const recentChanges = useBeadsStore(state => state.recentChanges);
   const statusVisibility = useBeadsStore(state => state.statusVisibility);
   const searchQuery = useBeadsStore(state => state.searchQuery);
   const filter = useBeadsStore(state => state.filter);
@@ -90,6 +91,7 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
                   glyphs={glyphs}
                   width={listWidth}
                   idWidth={idWidth}
+                  change={recentChanges.get(node.issue.id)?.kind}
                 />
               ))}
             </Box>
