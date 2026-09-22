@@ -1,6 +1,7 @@
 import { beforeEach, expect, test } from 'bun:test';
 import { normalizeBeads } from '../bd/parser';
 import { DEFAULT_STATUS_VISIBILITY } from '../utils/visibility';
+import { LAYOUT, listBudget } from '../utils/constants';
 import { isModalOpen, useBeadsStore } from './store';
 
 function data() {
@@ -222,10 +223,10 @@ test('the board pages in whole cards against the height it was given', () => {
   store.setChromeHeight(0);
 
   store.setTerminalSize(140, 45);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(4);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(13);
 
   store.setTerminalSize(140, 61);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(6);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(19);
 });
 
 test('chrome above the board costs it a page of cards', () => {
@@ -234,7 +235,7 @@ test('chrome above the board costs it a page of cards', () => {
   store.setTerminalSize(140, 61);
 
   store.setChromeHeight(16);
-  expect(useBeadsStore.getState().itemsPerPage).toBe(4);
+  expect(useBeadsStore.getState().itemsPerPage).toBe(13);
 });
 
 test('a resized page keeps the selected card on screen', () => {
@@ -251,5 +252,17 @@ test('a resized page keeps the selected card on screen', () => {
   store.setChromeHeight(16);
   const open = useBeadsStore.getState().columnStates.open;
   expect(open.selectedIndex).toBe(7);
-  expect(open.scrollOffset).toBe(4);
+  expect(open.scrollOffset).toBe(0);
+});
+
+// The page size is derived, not stored: it is how many whole cards fit the body
+// the view was given, so a change to the card height moves it without a new number.
+test('the page size is the whole-card capacity of the height the board was given', () => {
+  const store = useBeadsStore.getState();
+  store.setChromeHeight(0);
+  for (const height of [24, 45, 61, 80]) {
+    store.setTerminalSize(140, height);
+    const expected = Math.max(1, Math.floor(listBudget('kanban', height).body / LAYOUT.kanbanCardHeight));
+    expect(useBeadsStore.getState().itemsPerPage).toBe(expected);
+  }
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { StatusColumn } from './StatusColumn';
+import { StatusColumn, STRIP_WIDTH } from './StatusColumn';
 import { DetailPanel } from './DetailPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { TreeView } from './TreeView';
@@ -52,21 +52,6 @@ function KanbanView({ height }: { height: number }) {
     blocked: visibleColumnsByStatus.blocked.length,
   };
 
-  // Responsive layout: fill the terminal width with as many of the 5 columns as fit.
-  const MIN_COLUMN_WIDTH = 24;
-  const MAX_COLUMN_WIDTH = 60;
-  const shouldShowDetailsAlongside = showDetails
-    && terminalWidth >= MIN_COLUMN_WIDTH * 2 + LAYOUT.detailPanelWidth + 2;
-  const widthForColumns = shouldShowDetailsAlongside
-    ? terminalWidth - LAYOUT.detailPanelWidth - SPLIT_GAP
-    : terminalWidth;
-  const visibleColumns = Math.min(5, Math.max(1, Math.floor(widthForColumns / MIN_COLUMN_WIDTH)));
-  const columnWidth = shouldShowDetailsAlongside
-    ? MIN_COLUMN_WIDTH
-    : Math.min(MAX_COLUMN_WIDTH, Math.floor(widthForColumns / visibleColumns));
-  const detailWidth = terminalWidth - visibleColumns * columnWidth - SPLIT_GAP;
-  const detailsHeight = listBudget('kanban', height).panelHeight;
-
   const statusConfig = [
     { key: 'open', title: 'Open' },
     { key: 'in_progress', title: 'In Progress' },
@@ -75,21 +60,55 @@ function KanbanView({ height }: { height: number }) {
     { key: 'other', title: 'Other' },
   ] as const;
 
-  // Keep the selected column in the responsive window.
-  const firstVisibleColumn = Math.min(
-    Math.max(0, selectedColumn - visibleColumns + 1),
-    statusConfig.length - visibleColumns,
+  // Responsive layout: a column with no cards always collapses to a thin strip,
+  // even without a filter, and the columns that hold cards divide the width the
+  // strips leave. The window over which columns are full pages across the
+  // non-empty columns alone, so a strip never costs a full column its place.
+  const MIN_COLUMN_WIDTH = 24;
+  const MAX_COLUMN_WIDTH = 60;
+  const shouldShowDetailsAlongside = showDetails
+    && terminalWidth >= MIN_COLUMN_WIDTH * 2 + LAYOUT.detailPanelWidth + 2;
+  const widthForColumns = shouldShowDetailsAlongside
+    ? terminalWidth - LAYOUT.detailPanelWidth - SPLIT_GAP
+    : terminalWidth;
+
+  const nonEmptyColumns = statusConfig
+    .map((_, index) => index)
+    .filter(index => visibleColumnsByStatus[statusConfig[index].key].length > 0);
+
+  // How many non-empty columns fit as full at once: every column that is not
+  // full still costs a strip, so the five together must fit widthForColumns.
+  const roomForFull = Math.floor(
+    (widthForColumns - statusConfig.length * STRIP_WIDTH) / (MIN_COLUMN_WIDTH - STRIP_WIDTH),
   );
-  const columnsToShow = statusConfig.slice(firstVisibleColumn, firstVisibleColumn + visibleColumns);
+  const fullCount = Math.min(nonEmptyColumns.length, Math.max(nonEmptyColumns.length > 0 ? 1 : 0, roomForFull));
+  const stripCount = statusConfig.length - fullCount;
+  const widthForFull = Math.max(0, widthForColumns - stripCount * STRIP_WIDTH);
+  const columnWidth = fullCount > 0
+    ? Math.min(MAX_COLUMN_WIDTH, Math.floor(widthForFull / fullCount))
+    : 0;
+
+  // Slide the full window over the non-empty columns, keeping the selected one in
+  // it; a selected empty column leaves the window on the first non-empty group.
+  const selectedPosition = Math.max(0, nonEmptyColumns.indexOf(selectedColumn));
+  const firstFull = Math.min(
+    Math.max(0, selectedPosition - fullCount + 1),
+    Math.max(0, nonEmptyColumns.length - fullCount),
+  );
+  const fullColumns = new Set(nonEmptyColumns.slice(firstFull, firstFull + fullCount));
+
+  const detailWidth = terminalWidth - fullCount * columnWidth - stripCount * STRIP_WIDTH - SPLIT_GAP;
+  const detailsHeight = listBudget('kanban', height).panelHeight;
 
   const activeColumn = statusConfig[selectedColumn] ?? statusConfig[0];
   const activeIssues = visibleColumnsByStatus[activeColumn.key];
   const activePosition = activeIssues.length === 0
     ? 0
     : Math.min(columnStates[activeColumn.key].selectedIndex + 1, activeIssues.length);
+  const collapsedWithCards = nonEmptyColumns.length - fullCount;
   const stats: HeaderStat[] = [
     { text: `${filteredStats.total} issues` },
-    ...(visibleColumns < 5 ? [{ text: `${5 - visibleColumns} hidden` }] : []),
+    ...(collapsedWithCards > 0 ? [{ text: `${collapsedWithCards} collapsed` }] : []),
     { text: `${activeColumn.title} ${activePosition}/${activeIssues.length}`, strong: true },
   ];
   const panel = shouldShowDetailsAlongside ? { width: detailWidth } : undefined;
@@ -117,19 +136,21 @@ function KanbanView({ height }: { height: number }) {
         ) : (
           <>
             <Box flexShrink={0}>
-              {columnsToShow.map(({ key, title }, idx) => {
+              {statusConfig.map(({ key, title }, index) => {
                 const columnState = columnStates[key];
+                const full = fullColumns.has(index);
                 return (
                   <StatusColumn
                     key={key}
                     title={title}
                     issues={visibleColumnsByStatus[key]}
-                    isActive={selectedColumn === firstVisibleColumn + idx}
+                    isActive={selectedColumn === index}
                     selectedIndex={columnState.selectedIndex}
                     scrollOffset={columnState.scrollOffset}
                     itemsPerPage={itemsPerPage}
                     statusKey={key}
-                    width={columnWidth}
+                    width={full ? columnWidth : STRIP_WIDTH}
+                    collapsed={!full}
                   />
                 );
               })}

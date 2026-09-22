@@ -53,10 +53,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the row its trailer used to spend.
 - The Kanban board takes the same chrome. Its `BD TUI - Kanban Board` title,
   the terminal-size hint and the counts row give way to one header rule that
-  names the view, the workspace, the issue count, how many columns are hidden
-  and the cursor position in the active column. The detail panel beside the
-  board is framed by the rules instead of drawing its own border, which leaves
-  the board a row it used to spend on chrome.
+  names the view, the workspace, the issue count, how many card-bearing columns
+  are collapsed and the cursor position in the active column. The detail panel
+  beside the board is framed by the rules instead of drawing its own border,
+  which leaves the board a row it used to spend on chrome.
+- The Kanban card is three borderless rows: the priority beside a status band
+  that runs down the left edge, the title wrapping onto a second row, and the
+  id, type and one right-aligned fact on the third. The board pages in whole
+  cards, and the band breaks at the top of each following card to set one off
+  from the next without spending a row on a rule. A column with no cards
+  collapses to a three-cell spine of vertical letters, even without a filter, so
+  the columns that hold cards divide the width the spines leave; a card-bearing
+  column the responsive window cannot fit collapses the same way, with its count
+  beneath its name. The detail panel now starts hidden and stays one key away.
 - The detail panel is a borderless key/value grid with a progress bar for
   parents, the subtasks with their status, ISO timestamps, and the description
   paged underneath; the side pane is 40 cells wide in Tree and Kanban.

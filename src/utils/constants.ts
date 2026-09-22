@@ -6,6 +6,9 @@ export const LAYOUT = {
   columnWidth: 37,
   detailPanelWidth: 40,
   issueCardHeight: 8,
+  // Rows one Kanban card occupies, so the board pages in whole cards. Distinct
+  // from issueCardHeight, which floors the view height rather than a card.
+  kanbanCardHeight: 3,
   titleMaxLength: 32,
   descriptionMaxLength: 200,
   minTerminalWidth: 60,
@@ -97,7 +100,7 @@ export type ListView = 'tree' | 'memories' | 'kanban' | 'stats';
 const VIEW_CHROME: Record<ListView, { body: number; panel: number }> = {
   tree: { body: 4, panel: 3 },
   memories: { body: 3, panel: 3 },
-  kanban: { body: 13, panel: 3 },
+  kanban: { body: 4, panel: 3 },
   stats: { body: 3, panel: 3 },
 };
 

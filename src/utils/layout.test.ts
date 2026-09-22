@@ -61,7 +61,7 @@ describe('list budget', () => {
   test.each([
     ['tree', 41, 41, 42],
     ['memories', 42, 42, 42],
-    ['kanban', 32, 32, 42],
+    ['kanban', 41, 41, 42],
     ['stats', 42, 42, 42],
   ] as const)('%s at 45 rows', (view, body, itemsPerPage, panelHeight) => {
     expect(listBudget(view, 45)).toEqual({ body, itemsPerPage, panelHeight });

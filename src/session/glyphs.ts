@@ -28,6 +28,8 @@ export interface GlyphSet {
   statusDeferred: string;
   statusOther: string;
   gutter: string;
+  /** The status ribbon down the left of a Kanban card; it breaks between cards. */
+  band: string;
   barDone: string;
   barEmpty: string;
   caretCollapsed: string;
@@ -70,6 +72,7 @@ const FANCY: GlyphSet = {
   statusDeferred: '◊',
   statusOther: '∙',
   gutter: '▌',
+  band: '▏',
   barDone: '█',
   barEmpty: '░',
   caretCollapsed: '▸',
@@ -107,6 +110,7 @@ const SAFE: GlyphSet = {
   statusDeferred: '◊',
   statusOther: '∙',
   gutter: '█',
+  band: '│',
   barDone: '█',
   barEmpty: '░',
   caretCollapsed: '>',
@@ -145,6 +149,7 @@ const ASCII: GlyphSet = {
   statusDeferred: '~',
   statusOther: '?',
   gutter: '|',
+  band: '|',
   barDone: '#',
   barEmpty: '-',
   caretCollapsed: '>',

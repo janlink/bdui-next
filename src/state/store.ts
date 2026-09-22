@@ -32,8 +32,8 @@ function columnPaging(
   viewHeight: number,
   columnStates: Record<StatusKey, ColumnState>,
 ): { itemsPerPage: number; columnStates: Record<StatusKey, ColumnState> } {
-  const body = Math.max(listBudget('kanban', viewHeight).body, LAYOUT.issueCardHeight);
-  const itemsPerPage = Math.max(Math.floor(body / LAYOUT.issueCardHeight), 1);
+  const body = Math.max(listBudget('kanban', viewHeight).body, LAYOUT.kanbanCardHeight);
+  const itemsPerPage = Math.max(Math.floor(body / LAYOUT.kanbanCardHeight), 1);
   const paged = { ...columnStates };
   for (const statusKey of STATUS_KEYS) {
     const selectedIndex = paged[statusKey].selectedIndex;
@@ -291,7 +291,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   viewMode: 'tree',
   previousView: 'tree',
   showHelp: false,
-  showDetails: true,
+  showDetails: false,
   showSearch: false,
   showFilter: false,
   showExportDialog: false,
