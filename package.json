@@ -20,6 +20,7 @@
     "check": "bun run test && bun run typecheck && bun run build",
     "test:notifications": "bun run test-notification.ts",
     "build": "bun build --compile ./src/index.tsx --outfile bdui",
+    "demo": "bash demo/render.sh",
     "build:all": "bun run build:macos && bun run build:linux && bun run build:windows",
     "build:macos": "bun build --compile --target=bun-darwin-arm64 ./src/index.tsx --outfile dist/bdui-macos-arm64 && bun build --compile --target=bun-darwin-x64 ./src/index.tsx --outfile dist/bdui-macos-x64",
     "build:linux": "bun build --compile --target=bun-linux-x64 ./src/index.tsx --outfile dist/bdui-linux-x64",

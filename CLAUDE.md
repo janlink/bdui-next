@@ -183,15 +183,22 @@ For interaction changes, also run the compiled TUI in a real terminal against a
 representative current Beads workspace. Exercise each changed key path once;
 builds and unit tests are not a substitute for rendered interaction checks.
 
-To drive the TUI headlessly (no controlling terminal), allocate a PTY with
-`script` and feed timed keystrokes. The PTY reports 0 columns by default, which
-trips the "Terminal Too Narrow" guard, so set the size with `stty` inside the
-child before launching:
+For reproducible demo GIFs and screenshots, use the browser-free capture
+pipeline in `demo/`: `bun run demo` seeds a deterministic Beads workspace, drives
+the compiled binary through a pseudo-terminal with a keystroke tape
+(`demo/board.tape`), records the raw output as an asciicast, and renders it to
+`assets/demo.gif` (plus a still `assets/demo.png`) with `agg`. It needs `agg`
+(`brew install agg`) and `python3`; see `demo/README.md` for how to add a tape.
+
+For a quick headless text check with no assets, allocate a PTY with `script` and
+feed timed keystrokes. The PTY reports 0 columns by default, which trips the
+"Terminal Too Narrow" guard, so set the size with `stty` inside the child before
+launching:
 
 ```bash
-{ sleep 2; printf '6'; sleep 1; printf 'q'; } \
+{ sleep 2; printf '2'; sleep 1; printf 'q'; } \
   | script -qfc "stty rows 45 cols 140; cd <workspace> && exec /abs/path/bdui" /dev/null \
-  | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\r/\n/g'   # strip ANSI to grep rendered text
+  | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\r$//; s/\r/\n/g'   # strip ANSI to grep rendered text
 ```
 
 ## Branching and pull requests
