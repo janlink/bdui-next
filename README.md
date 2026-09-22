@@ -16,6 +16,7 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 - **Kanban Board** - Five-column view (Open, In Progress, Blocked, Closed, Other)
 - **Tree View** - Hierarchical parent-child relationships with interactive navigation
 - **Statistics Dashboard** - Comprehensive analytics with visual bar charts
+- **Memories** - Browse and delete `bd remember` entries
 
 ### 🎨 Rich User Experience
 - **Real-time Updates** - Serialized polling through the supported `bd` CLI
@@ -216,11 +217,15 @@ Features:
 - The board sits between the same rules as the tree: the header rule names the
   view, the workspace, the issue count, how many columns are hidden, and where
   the cursor stands in the active column; the footer rule carries the view tabs
+- Each card is three borderless rows: the priority beside the title, the
+  title's second line, then the ID, the type and one right-aligned fact (a
+  parent's progress, else what blocks it, else its owner or a label)
+- A status band runs down each card's left edge and breaks at the top of the
+  next card; the selected card draws a heavier band across all three rows
 - Beads priority semantics: P0 Critical, P1 High, P2 Medium, P3 Low, P4 Backlog
-- Type indicators including epic, feature, bug, task, chore, and decision
-- Label tags
-- Per-column pagination and selection
-- Responsive layout (adapts to terminal size)
+- Per-column pagination in whole cards, with independent selection
+- Columns without cards collapse to a three-cell spine of vertical letters
+- The detail panel starts hidden; `Enter` or `Space` opens it
 
 ### Tree View (Default)
 Shows hierarchical parent-child relationships on a fixed grid, so the eye finds
@@ -366,11 +371,15 @@ Removes all active search and filter criteria.
 ## 📊 Responsive Layout
 
 ### Terminal Size Adaptation
-The Kanban board fills the width with as many 24-cell columns as fit:
-- **120+ cols**: All five columns
-- **96-119 cols**: Four columns; the window follows the active column
-- **72-95 cols**: Three columns
-- **60-71 cols**: Two columns
+On the Kanban board, a column without cards always collapses to a three-cell
+spine. The columns that hold cards share the remaining width, each between 24
+and 60 cells wide. When not all of them fit, the rest collapse the same way,
+show their count below their name, and the window follows the active column.
+With all five columns holding cards:
+- **120+ cols**: All five full
+- **99-119 cols**: Four full
+- **78-98 cols**: Three full
+- **60-77 cols**: Two full
 
 With the detail panel open, a terminal of 90 columns or more shows the panel
 in a 40-cell pane beside the board, framed by the rules the way the tree frames
@@ -387,8 +396,6 @@ description too long for it says how many lines are cut and pages on
 - Height: 24 rows (recommended: 30+)
 - 256-color support recommended; 16 colors and no color are supported (see Terminal Capabilities)
 
-The Kanban header shows the terminal dimensions (e.g., "120x30").
-
 ## 🧪 Testing
 
 ```bash
@@ -404,6 +411,17 @@ bun run /path/to/bdui/src/index.tsx
 ```
 
 The automated suite creates isolated temporary embedded-Dolt workspaces with the installed `bd` CLI. It also covers argument safety, polling lifecycle, status normalization, filtering, navigation, and priority semantics.
+
+### Demo Captures
+
+```bash
+bun run demo
+```
+
+This seeds a deterministic Beads workspace, drives the compiled binary through
+a pseudo-terminal with the keystroke tape `demo/board.tape`, and renders
+`assets/demo.gif` and `assets/demo.png` with [agg](https://github.com/asciinema/agg).
+It needs `agg` and `python3`. See `demo/README.md` for how to add a tape.
 
 ## 🏗️ Architecture
 
@@ -424,50 +442,15 @@ The automated suite creates isolated temporary embedded-Dolt workspaces with the
 
 ### Project Structure
 ```
-bdui-next/
-├── src/
-│   ├── components/       # React/Ink components
-│   │   ├── App.tsx       # Main app with keyboard handling
-│   │   ├── Board.tsx     # View router and five-column Kanban board
-│   │   ├── TreeView.tsx  # Hierarchical tree view
-│   │   ├── IssueRow.tsx  # One tree row on the shared column grid
-│   │   ├── Header.tsx    # The rule above a view, forked at the panel
-│   │   ├── Footer.tsx    # The rule below it, plus the key hint row
-│   │   ├── Rule.tsx      # A horizontal rule with words set into it
-│   │   ├── DetailPanel.tsx
-│   │   ├── StatsView.tsx
-│   │   ├── CreateIssueForm.tsx
-│   │   ├── EditIssueForm.tsx
-│   │   ├── ExportDialog.tsx
-│   │   ├── ThemeSelector.tsx
-│   │   └── ...
-│   ├── bd/               # bd integration
-│   │   ├── client.ts     # Bounded, shell-free bd process boundary
-│   │   ├── parser.ts     # Public JSON normalization
-│   │   ├── watcher.ts    # Serialized polling and deduplication
-│   │   └── commands.ts   # Current create/update/close commands
-│   ├── session/          # Terminal capabilities resolved once at startup
-│   │   ├── glyphs.ts     # The three character sets and the tier switch
-│   │   ├── colors.ts     # Color depth and the chalk level it implies
-│   │   ├── ambiguous.ts  # East Asian Ambiguous width probe
-│   │   └── window-title.ts # The tab title, pushed and popped around the session
-│   ├── state/            # State management
-│   │   └── store.ts      # Zustand store
-│   ├── themes/           # Theme definitions
-│   │   └── themes.ts
-│   ├── utils/            # Utilities
-│   │   ├── notifications.ts
-│   │   └── export.ts
-│   ├── types.ts          # TypeScript types
-│   └── index.tsx         # Entry point
-├── assets/
-│   └── icons/            # Notification icons
-│       ├── completed.png
-│       ├── blocked.png
-│       └── README.md
-├── CLAUDE.md             # Development documentation
-├── package.json
-└── README.md             # This file
+src/
+├── components/   # Ink views, chrome, forms, and dialogs
+├── bd/           # bd process boundary, JSON normalization, polling, mutations
+├── session/      # Terminal capabilities resolved once at startup
+├── state/        # Zustand store
+├── themes/       # Color schemes per color depth
+└── utils/        # Layout constants, export, notifications
+demo/             # Reproducible demo captures
+assets/           # Demo GIF and notification icons
 ```
 
 ## 🤝 Contributing
