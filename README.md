@@ -92,7 +92,7 @@ bun run build:windows
 bun run build:all
 ```
 
-Binaries will be created in the `dist/` directory (~50-60 MB each, includes Bun runtime).
+Binaries will be created in the `dist/` directory (~60-120 MB each, includes Bun runtime).
 
 ## 📖 Usage
 
@@ -411,6 +411,9 @@ bun run /path/to/bdui/src/index.tsx
 ```
 
 The automated suite creates isolated temporary embedded-Dolt workspaces with the installed `bd` CLI. It also covers argument safety, polling lifecycle, status normalization, filtering, navigation, and priority semantics.
+
+CI additionally runs `bun audit --audit-level=high` and fails on any high or
+critical advisory in the dependency tree.
 
 ### Demo Captures
 
