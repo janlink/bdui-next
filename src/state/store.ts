@@ -111,6 +111,8 @@ export interface BeadsStore {
   glyphs: GlyphSet;
   searchQuery: string;
   notificationsEnabled: boolean;
+  /** The detail panel renders descriptions as Markdown, or shows their source. */
+  descriptionMarkdown: boolean;
 
   // Toast messages for user feedback
   toastMessage: ToastMessage | null;
@@ -160,6 +162,7 @@ export interface BeadsStore {
   toggleHelp: () => void;
   toggleDetails: () => void;
   toggleNotifications: () => void;
+  toggleDescriptionMarkdown: () => void;
   toggleSearch: () => void;
   toggleFilter: () => void;
   toggleExportDialog: () => void;
@@ -312,6 +315,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
   glyphs: getGlyphs(DEFAULT_GLYPH_TIER),
   searchQuery: '',
   notificationsEnabled: true, // Enabled by default
+  descriptionMarkdown: true,
   recentChanges: new Map(),
 
   // Toast messages
@@ -634,6 +638,10 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
 
   toggleNotifications: () => {
     set(state => ({ notificationsEnabled: !state.notificationsEnabled }));
+  },
+
+  toggleDescriptionMarkdown: () => {
+    set(state => ({ descriptionMarkdown: !state.descriptionMarkdown }));
   },
 
   toggleSearch: () => {
