@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test';
-import { detailPagingIsActive, getDescriptionPage } from './DetailPanel';
+import { descriptionLines, detailPagingIsActive, getDescriptionPage, pageLines, wrapTitle } from './DetailPanel';
+import { getGlyphs } from '../session/glyphs';
+import { lineText } from '../utils/markdown';
 import { FOOTER_HINT_WORDS } from './Footer';
 
 test('description pages preserve all content for scrolling', () => {
@@ -16,7 +18,8 @@ test('description pages preserve all content for scrolling', () => {
   } while (hasMore);
 
   expect(pages[0]).toBe('first line');
-  expect(pages.slice(1).join('')).toBe(description.split('\n')[1]);
+  // The one space each soft wrap breaks on is the only thing not drawn.
+  expect(pages.slice(1).join(' ')).toBe(description.split('\n')[1]);
 });
 
 test('description paging uses terminal cells for wide graphemes', () => {
@@ -29,19 +32,27 @@ test('description paging uses terminal cells for wide graphemes', () => {
   expect(getDescriptionPage(description, 4, 1, 2).lines).toEqual(['界A']);
 });
 
-test('soft wraps preserve indentation and repeated spaces across pages', () => {
-  const description = '  indented   words  ';
+test('soft wraps keep indentation and inner runs of spaces', () => {
+  const description = '  indented  and   spaced words';
   const fragments: string[] = [];
   let offset = 0;
   let page;
 
   do {
-    page = getDescriptionPage(description, 6, 1, offset);
+    page = getDescriptionPage(description, 16, 1, offset);
     fragments.push(...page.lines);
     offset = page.nextOffset;
   } while (page.hasMore);
 
-  expect(fragments.join('')).toBe(description);
+  expect(fragments).toEqual(['  indented  and', 'spaced words']);
+});
+
+test('a soft wrap that falls on a space keeps the word before it', () => {
+  expect(getDescriptionPage('alpha beta gamma', 10, 5, 0).lines).toEqual(['alpha beta', 'gamma']);
+});
+
+test('a title cut after its last row keeps the spaces of its tail', () => {
+  expect(wrapTitle('one two three four five', 8, '~', 2)).toEqual(['one two', 'three f~']);
 });
 
 test('detail paging yields input ownership to every overlay', () => {
@@ -87,4 +98,21 @@ test('final description page keeps its valid page offset', () => {
 
 test('footer advertises the open-details shortcut', () => {
   expect(FOOTER_HINT_WORDS).toContain('details');
+});
+
+test('description lines render Markdown by default and the source on request', () => {
+  const glyphs = getGlyphs('ascii');
+  const source = '# Title\n- **item**';
+
+  expect(descriptionLines(source, 40, glyphs, true).map(lineText)).toEqual(['Title', '', '* item']);
+  expect(descriptionLines(source, 40, glyphs, false).map(lineText)).toEqual(['# Title', '- **item**']);
+});
+
+test('rendered description lines page like source lines', () => {
+  const lines = descriptionLines('a\nb\nc', 20, getGlyphs('fancy'), true);
+  const first = pageLines(lines, 2, 0);
+
+  expect(first.lines.map(lineText)).toEqual(['a', 'b']);
+  expect(first.remaining).toBe(1);
+  expect(pageLines(lines, 2, first.nextOffset).lines.map(lineText)).toEqual(['c']);
 });

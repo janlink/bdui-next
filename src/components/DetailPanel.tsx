@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
@@ -12,14 +12,21 @@ import {
 import { statusGlyph, statusWord } from './IssueRow';
 import type { GlyphSet } from '../session/glyphs';
 import type { Theme } from '../themes/themes';
+import { plainLine, renderMarkdown, type MarkdownRole, type StyledLine } from '../utils/markdown';
 
 const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-function wrapDescriptionLine(line: string, lineWidth: number): string[] {
-  if (!line) return [''];
+interface WrappedLine {
+  graphemes: string[];
+  /** Where each line starts, so a caller can take the text from any row on. */
+  starts: number[];
+  ends: number[];
+}
 
+function wrapGraphemes(line: string, lineWidth: number): WrappedLine {
   const graphemes = Array.from(graphemeSegmenter.segment(line), ({ segment }) => segment);
-  const wrapped: string[] = [];
+  const starts: number[] = [];
+  const ends: number[] = [];
   let start = 0;
 
   while (start < graphemes.length) {
@@ -32,20 +39,37 @@ function wrapDescriptionLine(line: string, lineWidth: number): string[] {
       end += 1;
     }
 
-    if (end < graphemes.length) {
-      for (let index = end - 1; index >= start; index -= 1) {
+    let next = end;
+    if (end < graphemes.length && !/\s/u.test(graphemes[end])) {
+      // Indentation is not a break opportunity; breaking there would leave
+      // the row empty.
+      let content = start;
+      while (content < end && /\s/u.test(graphemes[content])) content += 1;
+      for (let index = end - 1; index > content; index -= 1) {
         if (/\s/u.test(graphemes[index])) {
-          end = index + 1;
+          end = index;
+          next = index + 1;
           break;
         }
       }
     }
 
-    wrapped.push(graphemes.slice(start, end).join(''));
-    start = end;
+    // The whitespace a line breaks on belongs to neither line.
+    while (end > start && /\s/u.test(graphemes[end - 1]) && next < graphemes.length) end -= 1;
+    while (next < graphemes.length && /\s/u.test(graphemes[next])) next += 1;
+
+    starts.push(start);
+    ends.push(end);
+    start = next;
   }
 
-  return wrapped;
+  return { graphemes, starts, ends };
+}
+
+function wrapDescriptionLine(line: string, lineWidth: number): string[] {
+  if (!line) return [''];
+  const { graphemes, starts, ends } = wrapGraphemes(line, lineWidth);
+  return starts.map((start, index) => graphemes.slice(start, ends[index]).join(''));
 }
 
 export function getDescriptionPage(
@@ -54,9 +78,27 @@ export function getDescriptionPage(
   pageSize: number,
   offset: number,
 ) {
-  const lines = description
+  return pageLines(sourceLines(description, lineWidth), pageSize, offset);
+}
+
+function sourceLines(description: string, lineWidth: number): string[] {
+  return description
     .split('\n')
     .flatMap(line => wrapDescriptionLine(line, lineWidth));
+}
+
+export function descriptionLines(
+  description: string,
+  lineWidth: number,
+  glyphs: GlyphSet,
+  markdown: boolean,
+): StyledLine[] {
+  return markdown
+    ? renderMarkdown(description, lineWidth, glyphs)
+    : sourceLines(description, lineWidth).map(plainLine);
+}
+
+export function pageLines<T>(lines: T[], pageSize: number, offset: number) {
   const safeOffset = Math.min(offset, Math.max(0, lines.length - 1));
   const endOffset = Math.min(safeOffset + pageSize, lines.length);
   return {
@@ -82,7 +124,8 @@ export function wrapTitle(
   const lines = wrapDescriptionLine(title, lineWidth);
   if (lines.length <= maxLines) return lines;
   const kept = lines.slice(0, maxLines - 1);
-  const rest = lines.slice(maxLines - 1).join('');
+  const { graphemes, starts } = wrapGraphemes(title, lineWidth);
+  const rest = graphemes.slice(starts[maxLines - 1]).join('');
   return [...kept, fitToWidth(rest, lineWidth, ellipsis)];
 }
 
@@ -134,6 +177,21 @@ const DEFAULT_DESCRIPTION_ROWS = 8;
 interface GridRow {
   label: string;
   value: React.ReactNode;
+}
+
+function roleStyle(role: MarkdownRole, theme: Theme): React.ComponentProps<typeof Text> {
+  const ink = theme.ink;
+  switch (role) {
+    case 'heading':
+    case 'strong': return { ...ink.strong, bold: true };
+    case 'emph': return { ...ink.text, italic: true };
+    case 'del': return { ...ink.dim, strikethrough: true };
+    case 'code': return { color: theme.colors.primary };
+    case 'link': return { color: theme.colors.primary, underline: true };
+    case 'faint': return ink.faint;
+    case 'rule': return ink.rule;
+    default: return ink.text;
+  }
 }
 
 function progressBar(closed: number, total: number, glyphs: GlyphSet): { done: string; rest: string } {
@@ -202,6 +260,7 @@ export function DetailPanel({
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
   const byId = useBeadsStore(state => state.data.byId);
+  const markdown = useBeadsStore(state => state.descriptionMarkdown);
 
   const [descriptionOffset, setDescriptionOffset] = useState(0);
   useEffect(() => setDescriptionOffset(0), [issue?.id]);
@@ -272,12 +331,17 @@ export function DetailPanel({
     ? DEFAULT_DESCRIPTION_ROWS
     : Math.max(1, maxHeight - fixedRows);
 
-  const roomyPage = getDescriptionPage(description, inner, room, descriptionOffset);
+  const lines = useMemo(
+    () => descriptionLines(description, inner, glyphs, markdown),
+    [description, inner, glyphs, markdown],
+  );
+  useEffect(() => setDescriptionOffset(0), [markdown]);
+  const roomyPage = pageLines(lines, room, descriptionOffset);
   // A description that does not fit says so on its last row, whether or not
   // the arrow keys page it here.
   const paged = roomyPage.hasPrevious || roomyPage.hasMore;
   const descriptionPage = paged
-    ? getDescriptionPage(description, inner, Math.max(1, room - 1), descriptionOffset)
+    ? pageLines(lines, Math.max(1, room - 1), descriptionOffset)
     : roomyPage;
 
   // The arrows page only where the panel owns them; PgUp/PgDn page everywhere.
@@ -322,7 +386,13 @@ export function DetailPanel({
       {description ? (
         <Box flexDirection="column" flexShrink={0}>
           <Text {...ink.rule}>{glyphs.treeDash.repeat(inner)}</Text>
-          <Text {...ink.text}>{descriptionPage.lines.join('\n')}</Text>
+          {descriptionPage.lines.map((line, index) => (
+            <Text key={index} {...ink.text}>
+              {line.length === 0 ? ' ' : line.map((span, spanIndex) => (
+                <Text key={spanIndex} {...roleStyle(span.role, theme)}>{span.text}</Text>
+              ))}
+            </Text>
+          ))}
           {paged && (
             <Text wrap="truncate-end">
               <Text {...ink.faint}>
@@ -375,6 +445,7 @@ export function DetailPanel({
         <Text wrap="truncate-end">
           <Text {...ink.strong}>e</Text><Text {...ink.faint}> edit  </Text>
           <Text {...ink.strong}>x</Text><Text {...ink.faint}> export  </Text>
+          {description ? <><Text {...ink.strong}>m</Text><Text {...ink.faint}>{markdown ? ' source  ' : ' markdown  '}</Text></> : null}
           <Text {...ink.strong}>esc</Text><Text {...ink.faint}> close</Text>
         </Text>
       )}

@@ -115,6 +115,7 @@ export function App() {
   const toggleHelp = useBeadsStore(state => state.toggleHelp);
   const toggleDetails = useBeadsStore(state => state.toggleDetails);
   const toggleNotifications = useBeadsStore(state => state.toggleNotifications);
+  const toggleDescriptionMarkdown = useBeadsStore(state => state.toggleDescriptionMarkdown);
   const toggleSearch = useBeadsStore(state => state.toggleSearch);
   const toggleFilter = useBeadsStore(state => state.toggleFilter);
   const toggleJumpToPage = useBeadsStore(state => state.toggleJumpToPage);
@@ -232,6 +233,10 @@ export function App() {
     // Toggle notifications
     if (input === 'n') {
       toggleNotifications();
+    }
+
+    if (input === 'm') {
+      toggleDescriptionMarkdown();
     }
 
     // View switching

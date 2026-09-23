@@ -35,6 +35,7 @@ A beautiful, real-time Text User Interface (TUI) visualizer for the [bd (Beads)]
 ### 🎯 Smart Features
 - **Per-column Pagination** - Independent scroll positions for each status column
 - **Detail Panel** - View full issue details including all dependencies
+- **Markdown Descriptions** - Headings, emphasis, lists, task lists, code, quotes, and tables render in the detail panel; `m` shows the source
 - **Blocked Status Detection** - Automatically moves issues with blockers to "Blocked" column
 - **Keyboard-first** - Every action accessible via keyboard shortcuts
 
@@ -172,6 +173,7 @@ to.
 - `←/→` or `h/l` - Move left/right (change column in Kanban view)
 - `Enter` or `Space` - Toggle detail panel
 - `PgUp/PgDn` - Page a description too long for the detail panel
+- `m` - Show the description as rendered Markdown or as source
 
 #### Views
 - `1` - Tree view (hierarchical, default)
@@ -391,6 +393,13 @@ the frame the view already draws: the rules fork at its border, name the issue
 above it and its keys below it, and the panel drops its own border. A
 description too long for it says how many lines are cut and pages on
 `PgUp`/`PgDn`.
+
+Descriptions render as Markdown, with a single newline kept as a line break the
+way issue comments treat it. Every line is cut to the panel before it is drawn:
+code keeps its lines and cuts the overlong ones, and a table pads each column to
+its widest cell, shrinks the widest column first when the panel is too narrow,
+and shows its source when even three cells per column do not fit. `m` switches
+between the rendered description and its source.
 
 ### Minimum Requirements
 - Width: 60 columns (recommended: 125+)

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The detail panel renders descriptions as Markdown: headings, bold, italics,
+  inline code, links, lists and task lists, code blocks, quotes, rules, and
+  tables, drawn with the active theme and glyph tier. A single newline stays a
+  line break. `m` switches between the rendered description and its source.
+
 ## [0.4.0] - 2026-09-22
 
 ### Added
