@@ -253,10 +253,10 @@ export function App() {
       setViewMode('memories');
     }
 
-    // Only Kanban keeps selection in the store. The row views own their
+    // Only Kanban keeps selection in the store. The tree view owns its
     // navigation locally, so routing these keys through the store there would
     // trigger a wasted full-board re-render on every keypress. Edit and export
-    // act on that selection, so those views handle them too.
+    // act on that selection, so the tree view handles them too.
     if (viewMode === 'kanban') {
       if (input === 'e') {
         navigateToEditIssue();

@@ -128,7 +128,7 @@ test('every input-owning overlay counts as an open modal', () => {
   }
 });
 
-test('row views keep the ancestor chain of a search match and drop its siblings', () => {
+test('the tree view keep the ancestor chain of a search match and drop its siblings', () => {
   const store = useBeadsStore.getState();
   store.setData(normalizeBeads([
     { id: 'epic', title: 'Platform work', status: 'open', issue_type: 'epic', priority: 1 },
@@ -146,7 +146,7 @@ test('row views keep the ancestor chain of a search match and drop its siblings'
   expect([...useBeadsStore.getState().getRowVisibleIds()].sort()).toEqual(['epic', 'epic.hit']);
 });
 
-test('row views apply field filters alongside search', () => {
+test('the tree view apply field filters alongside search', () => {
   const store = useBeadsStore.getState();
   store.setData(normalizeBeads([
     { id: 'epic', title: 'Platform work', status: 'open', issue_type: 'epic', priority: 1 },
@@ -161,7 +161,7 @@ test('row views apply field filters alongside search', () => {
   expect([...useBeadsStore.getState().getRowVisibleIds()].sort()).toEqual(['epic', 'epic.p0']);
 });
 
-test('row views never resurface an issue the status toggle hides', () => {
+test('the tree view never resurface an issue the status toggle hides', () => {
   const store = useBeadsStore.getState();
   store.setData(normalizeBeads([
     { id: 'done', title: 'Closed target', status: 'closed', issue_type: 'task', priority: 2 },
@@ -188,7 +188,7 @@ test('structured search tokens narrow the Kanban columns', () => {
   expect(useBeadsStore.getState().getVisibleColumns().open.map(issue => issue.id)).toEqual(['issue-third']);
 });
 
-test('search tokens AND with the panel filter across row views', () => {
+test('search tokens AND with the panel filter across the tree view', () => {
   const store = useBeadsStore.getState();
   store.setData(normalizeBeads([
     { id: 'epic', title: 'Platform work', status: 'open', issue_type: 'epic', priority: 1 },

@@ -425,7 +425,7 @@ export const useBeadsStore = create<BeadsStore>((set, get) => ({
     return groupVisibleIssues(get().getFilteredIssues());
   },
 
-  // List and tree resolve status visibility hierarchically, so they cannot reuse
+  // The tree resolves status visibility hierarchically, so it cannot reuse
   // getFilteredIssues (which applies it per issue). Search and filter are
   // intersected with that hierarchical set, then widened by ancestor context.
   getRowVisibleIds: () => {
