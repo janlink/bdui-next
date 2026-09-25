@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inline code, links, lists and task lists, code blocks, quotes, rules, and
   tables, drawn with the active theme and glyph tier. A single newline stays a
   line break. `m` switches between the rendered description and its source.
+- `z` in the tree view collapses every parent at every depth, and pressed again
+  expands them all. A row the fold hides hands the cursor to its root.
 
 ## [0.4.0] - 2026-09-22
 

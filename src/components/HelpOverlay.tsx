@@ -56,6 +56,7 @@ export function HelpOverlay() {
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>N</Text>              Create new issue (Shift+N)</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>e</Text>              Edit selected issue</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>x</Text>              Export/copy selected issue</Text>
+          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>z</Text>              Collapse/expand the whole tree</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>Enter / Space</Text>  Toggle detail panel</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>PgUp / PgDn</Text>    Page the description (the arrows too when the panel fills the view)</Text>
           <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>m</Text>              Show the description as rendered Markdown or as source</Text>

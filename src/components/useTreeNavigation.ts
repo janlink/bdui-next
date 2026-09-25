@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useInput } from 'ink';
 import { useBeadsStore, isModalOpen } from '../state/store';
 import type { Issue } from '../types';
-import type { TreeNode, FlatNode } from '../utils/tree';
+import { flattenTree, parentIds, rootIdOf, type TreeNode, type FlatNode } from '../utils/tree';
 
 interface NavState {
   selectedIndex: number;
@@ -16,14 +16,11 @@ export interface TreeNavigation {
   selectedIssue: Issue | undefined;
 }
 
-type Flatten = (roots: TreeNode[], collapsed: ReadonlySet<string>) => FlatNode[];
-
-// Shared keyboard navigation for the row-oriented list and tree views: vertical
-// movement, collapsing/expanding parents, and opening the edit form. Both views
-// own their selection locally so keypresses never trigger a store-wide re-render.
+// Keyboard navigation for the tree view: vertical movement, collapsing/expanding
+// parents, and opening the edit form. The view owns its selection locally so
+// keypresses never trigger a store-wide re-render.
 export function useTreeNavigation(
   tree: TreeNode[],
-  flatten: Flatten,
   itemsPerPage: number,
   detailsReplaceList: boolean,
 ): TreeNavigation {
@@ -35,7 +32,7 @@ export function useTreeNavigation(
   const navigateToEditIssue = useBeadsStore(state => state.navigateToEditIssue);
   const toggleExportDialog = useBeadsStore(state => state.toggleExportDialog);
 
-  const flatNodes = useMemo(() => flatten(tree, collapsed), [tree, flatten, collapsed]);
+  const flatNodes = useMemo(() => flattenTree(tree, collapsed), [tree, collapsed]);
 
   // Keep the selection in range when the visible set shrinks (filtering, collapsing).
   useEffect(() => {
@@ -108,6 +105,18 @@ export function useTreeNavigation(
         const parentIndex = flatNodes.findIndex(n => n.issue.id === node.parentId);
         if (parentIndex >= 0) moveTo(parentIndex);
       }
+      return;
+    }
+
+    // z folds every parent at every depth while any is open, otherwise opens
+    // them all. A row the fold hides hands the cursor to its root.
+    if (input === 'z' && !key.ctrl) {
+      const foldAll = flatNodes.some(n => n.hasChildren && !n.collapsed);
+      const next = foldAll ? parentIds(tree) : new Set<string>();
+      const targetId = foldAll ? rootIdOf(flatNodes, nav.selectedIndex) : flatNodes[nav.selectedIndex]?.issue.id;
+      const target = Math.max(0, flattenTree(tree, next).findIndex(n => n.issue.id === targetId));
+      setCollapsed(next);
+      moveTo(target);
       return;
     }
 

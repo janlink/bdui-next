@@ -235,6 +235,7 @@ Shows hierarchical parent-child relationships on a fixed grid, so the eye finds
 the same thing in the same column on every row:
 - Navigate with ↑/↓ or k/j
 - Press ←/→ or h/l to collapse/expand a parent
+- Press `z` to collapse every parent at once, and again to expand them all
 - Press Enter/Space to toggle details
 - Press `e` to edit selected issue
 - The view sits between two rules: the header rule names the view, the

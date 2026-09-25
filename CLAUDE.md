@@ -129,11 +129,11 @@ columns. Rendering, selection, navigation, pagination, editing, and exporting
 must all use this same view. When filters change, clamp or reset column
 selection and scroll state.
 
-The row-oriented list and tree views resolve status visibility hierarchically,
-so they cannot reuse that view. `getRowVisibleIds()` is their equivalent: it
-intersects the hierarchical status set with search and filter, then widens the
-result by each match's ancestor chain so a matched child keeps the epic above
-it as context. Both row views must read this one selector.
+The tree view resolves status visibility hierarchically, so it cannot reuse
+that view. `getRowVisibleIds()` is its equivalent: it intersects the
+hierarchical status set with search and filter, then widens the result by each
+match's ancestor chain so a matched child keeps the epic above it as context.
+The tree view must read this one selector.
 
 ### UI (`src/components/`)
 

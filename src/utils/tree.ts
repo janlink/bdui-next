@@ -86,3 +86,25 @@ export function flattenTree(roots: TreeNode[], collapsed: ReadonlySet<string> = 
 
   return flat;
 }
+
+/** Every node with children, at any depth: the set that folds the tree to its roots. */
+export function parentIds(roots: TreeNode[]): Set<string> {
+  const ids = new Set<string>();
+  const visit = (node: TreeNode) => {
+    if (node.children.length === 0) return;
+    ids.add(node.issue.id);
+    node.children.forEach(visit);
+  };
+  roots.forEach(visit);
+  return ids;
+}
+
+/** The root above the row at `index`, following its parent chain through `flat`. */
+export function rootIdOf(flat: FlatNode[], index: number): string | undefined {
+  let node: FlatNode | undefined = flat[index];
+  while (node?.parentId) {
+    const parentId: string = node.parentId;
+    node = flat.find(n => n.issue.id === parentId);
+  }
+  return node?.issue.id;
+}

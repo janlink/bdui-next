@@ -65,7 +65,7 @@ export function computeVisibleIds(data: BeadsData, visibility: StatusVisibility)
   return visible;
 }
 
-// Row views draw hierarchy, so a match must not appear detached from the epic
+// The tree view draws hierarchy, so a match must not appear detached from the epic
 // it belongs to: add each match's ancestor chain as context. Ancestors outside
 // `allowed` stay out, and the walk continues past them, so a status-hidden
 // parent does not resurface while a visible grandparent still anchors the row.
