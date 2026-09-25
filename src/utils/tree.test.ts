@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { normalizeBeads } from '../bd/parser';
-import { buildVisibleTree, flattenTree } from './tree';
+import { buildVisibleTree, flattenTree, parentIds, rootIdOf } from './tree';
 import { computeVisibleIds, DEFAULT_STATUS_VISIBILITY } from './visibility';
 import type { FlatNode } from './tree';
 
@@ -56,4 +56,21 @@ test('collapsing an inner node hides only its subtree', () => {
   expect(ids(flat)).not.toContain('epic.a1');
   expect(byId(flat, 'epic.a').collapsed).toBe(true);
   expect(byId(flat, 'epic.b').collapsed).toBe(false);
+});
+
+test('folding every parent leaves only the roots', () => {
+  const tree = sampleTree();
+  const folded = parentIds(tree);
+
+  expect(folded).toEqual(new Set(['epic', 'epic.a']));
+  expect(ids(flattenTree(tree, folded))).toEqual(['epic']);
+  expect(ids(flattenTree(tree, new Set()))).toHaveLength(4);
+});
+
+test('rootIdOf follows the parent chain to the root', () => {
+  const flat = flattenTree(sampleTree());
+
+  expect(rootIdOf(flat, ids(flat).indexOf('epic.a1'))).toBe('epic');
+  expect(rootIdOf(flat, ids(flat).indexOf('epic'))).toBe('epic');
+  expect(rootIdOf([], 0)).toBeUndefined();
 });

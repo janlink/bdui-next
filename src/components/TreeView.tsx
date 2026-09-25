@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { useBeadsStore } from '../state/store';
-import { buildVisibleTree, flattenTree } from '../utils/tree';
+import { buildVisibleTree } from '../utils/tree';
 import { useTreeNavigation } from './useTreeNavigation';
 import { ListHeader, ListRow, idColumnWidth } from './IssueRow';
 import { DetailPanel } from './DetailPanel';
@@ -39,7 +39,6 @@ export function TreeView({ data, terminalWidth, terminalHeight }: TreeViewProps)
   const detailsReplaceList = showDetails && !split.fits;
   const { flatNodes, selectedIndex, scrollOffset, selectedIssue } = useTreeNavigation(
     tree,
-    flattenTree,
     budget.itemsPerPage,
     detailsReplaceList,
   );
