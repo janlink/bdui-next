@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Issue } from '../types';
-import { useBeadsStore } from '../state/store';
+import { isModalOpen, useBeadsStore, type BeadsStore } from '../state/store';
 import { fitToWidth, padEndCells } from '../utils/cells';
 import {
   PRIORITY_LABELS,
@@ -153,18 +153,8 @@ interface DetailPanelProps {
   chrome?: 'own' | 'hosted';
 }
 
-interface DetailPagingOverlays {
-  showSearch: boolean;
-  showFilter: boolean;
-  showExportDialog: boolean;
-  showThemeSelector: boolean;
-  showJumpToPage: boolean;
-  showHelp: boolean;
-  showConfirmDialog: boolean;
-}
-
-export function detailPagingIsActive(overlays: DetailPagingOverlays): boolean {
-  return !Object.values(overlays).some(Boolean);
+export function detailPagingIsActive(state: BeadsStore): boolean {
+  return !isModalOpen(state);
 }
 
 // The padding on both sides, and the left border where the panel draws its own.
@@ -248,15 +238,7 @@ export function DetailPanel({
   chrome = 'own',
 }: DetailPanelProps) {
   const hosted = chrome === 'hosted';
-  const pagingIsActive = useBeadsStore(state => detailPagingIsActive({
-    showSearch: state.showSearch,
-    showFilter: state.showFilter,
-    showExportDialog: state.showExportDialog,
-    showThemeSelector: state.showThemeSelector,
-    showJumpToPage: state.showJumpToPage,
-    showHelp: state.showHelp,
-    showConfirmDialog: state.showConfirmDialog,
-  }));
+  const pagingIsActive = useBeadsStore(detailPagingIsActive);
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
   const byId = useBeadsStore(state => state.data.byId);
