@@ -4,7 +4,7 @@ import { normalizeBeads } from '../bd/parser';
 import { getGlyphs } from '../session/glyphs';
 import { isModalOpen, useBeadsStore } from '../state/store';
 import { getTheme } from '../themes/themes';
-import { splitViewLayout } from '../utils/constants';
+import { CHROME_HEIGHT, splitViewLayout } from '../utils/constants';
 import stringWidth, { setAmbiguousWidth } from 'string-width';
 import { pressKeys, renderLines } from '../test-utils/ink-render';
 import { Board } from './Board';
@@ -135,10 +135,16 @@ describe('view chrome', () => {
     expect(lines[18]).not.toContain(' more');
   });
 
-  test('shared chrome above the view shortens the view, not the frame', async () => {
-    const lines = await frameOf({ viewMode: 'tree', showSearch: true });
+  test.each([
+    ['showSearch', CHROME_HEIGHT.searchInput],
+    ['showFilter', CHROME_HEIGHT.filterPanel],
+    ['showJumpToPage', CHROME_HEIGHT.commandBar],
+  ] as const)('%s docks under the footer in exactly its chrome budget', async (flag, rows) => {
+    const lines = await frameOf({ viewMode: 'tree', [flag]: true });
     expect(lines).toHaveLength(HEIGHT);
-    expect(lines[HEIGHT - 1]).toContain('? help');
+    expect(lines[HEIGHT - rows - 1]).toContain('? help');
+    expect(lines[HEIGHT - rows]).toMatch(/^╭─+╮$/);
+    expect(lines[HEIGHT - 1]).toMatch(/^╰─+╯$/);
   });
 });
 
@@ -273,6 +279,7 @@ describe('footer', () => {
 // the frame stops responding without looking any different.
 describe('modal flags', () => {
   type ModalFlag =
+    | 'showHelp'
     | 'showSearch'
     | 'showFilter'
     | 'showExportDialog'
@@ -282,6 +289,7 @@ describe('modal flags', () => {
     | 'showConfirmDialog';
 
   const FLAGS: ModalFlag[] = [
+    'showHelp',
     'showSearch',
     'showFilter',
     'showExportDialog',

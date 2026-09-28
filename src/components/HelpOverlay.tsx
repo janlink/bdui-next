@@ -1,114 +1,177 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React, { useState } from 'react';
+import { Box, Text, useInput } from 'ink';
+import stringWidth from 'string-width';
 import { useBeadsStore } from '../state/store';
+import type { GlyphSet } from '../session/glyphs';
+import { fitToWidth } from '../utils/cells';
+import { Frame, FRAME_CHROME, FRAME_INSET } from './Frame';
+import { FOOTER_HEIGHT } from './Footer';
 
+/** A key and what it does; a row without a key is a note under its section. */
+type HelpRow = readonly [key: string, action: string];
+
+interface HelpSection {
+  title: string;
+  rows: readonly HelpRow[];
+}
+
+export function helpSections(glyphs: GlyphSet): HelpSection[] {
+  return [
+    {
+      title: 'Navigation',
+      rows: [
+        ['left/right or h/l', 'Move between columns'],
+        ['up/down or k/j', 'Move up/down in column'],
+        ['0', 'Jump to first issue'],
+        ['$ or G', 'Jump to last issue'],
+      ],
+    },
+    {
+      title: 'Views',
+      rows: [
+        ['1', 'Tree view (hierarchical)'],
+        ['2', 'Kanban board view'],
+        ['3', 'Statistics & analytics dashboard'],
+        ['4', 'Memories (bd remember; d delete, r refresh)'],
+      ],
+    },
+    {
+      title: 'Search & Filter',
+      rows: [
+        ['/', 'Open search'],
+        ['f', 'Open filter panel'],
+        ['v', 'Choose which statuses are shown'],
+        ['c', 'Clear all filters and search'],
+        ['', 'Closed is hidden by default; children of a shown parent stay visible'],
+      ],
+    },
+    {
+      title: 'Actions',
+      rows: [
+        ['N', 'Create new issue (Shift+N)'],
+        ['e', 'Edit selected issue'],
+        ['x', 'Export/copy selected issue'],
+        ['z', 'Collapse/expand the whole tree'],
+        ['Enter or Space', 'Toggle detail panel'],
+        ['PgUp/PgDn', 'Page the description (the arrows too when the panel fills the view)'],
+        ['m', 'Show the description as rendered Markdown or as source'],
+        ['r', 'Refresh data'],
+        ['u', 'Undo (view history)'],
+      ],
+    },
+    {
+      title: 'Command bar',
+      rows: [
+        [': or g', 'Open the command bar'],
+        [':5', 'Jump to page 5'],
+        [':issue-id', 'Jump to issue by ID'],
+        [':s o/i/b/c', 'Set status'],
+        [':p 0-4', `Set priority (P0 Critical ${glyphs.arrowRight} P4 Backlog)`],
+        [':kanban :tree', 'Switch view (also :stats, :mem)'],
+        [':theme name', 'Change theme'],
+        [':new :edit :q', 'Create, edit, quit'],
+      ],
+    },
+    {
+      title: 'Forms',
+      rows: [
+        ['Tab/Shift+Tab', 'Navigate between fields'],
+        ['up/down', 'Change priority/status/type'],
+        ['Enter', 'Submit (with confirmation)'],
+        ['Esc', 'Cancel and return'],
+      ],
+    },
+    {
+      title: 'Other',
+      rows: [
+        ['t', 'Change theme / color scheme'],
+        ['n', 'Toggle notifications when an issue closes or becomes blocked'],
+        ['?', 'Toggle this help'],
+        ['q or Ctrl+C', 'Quit'],
+      ],
+    },
+  ];
+}
+
+type HelpLine =
+  | { kind: 'heading'; text: string }
+  | { kind: 'row'; key: string; action: string }
+  | { kind: 'note'; text: string }
+  | { kind: 'blank' };
+
+export function helpLines(sections: readonly HelpSection[]): HelpLine[] {
+  return sections.flatMap((section, index) => [
+    ...(index > 0 ? [{ kind: 'blank' } as const] : []),
+    { kind: 'heading', text: section.title } as const,
+    ...section.rows.map(([key, action]): HelpLine => (
+      key ? { kind: 'row', key, action } : { kind: 'note', text: action }
+    )),
+  ]);
+}
+
+// Rows the overlay keeps clear above itself; below, it leaves the footer in sight.
+const MARGIN_ROWS = 1;
+const MAX_WIDTH = 96;
+const KEY_GAP = 2;
+
+/**
+ * The keyboard reference. It owns the keyboard while open: the arrows, j/k,
+ * and PgUp/PgDn scroll it, and Esc, q, or ? close it. A terminal too short for
+ * the whole reference shows a window of it and counts the rows around it.
+ */
 export function HelpOverlay() {
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
+  const terminalWidth = useBeadsStore(state => state.terminalWidth);
+  const terminalHeight = useBeadsStore(state => state.terminalHeight);
+  const toggleHelp = useBeadsStore(state => state.toggleHelp);
+
+  const lines = helpLines(helpSections(glyphs));
+  const keyWidth = Math.max(...lines.map(line => (line.kind === 'row' ? stringWidth(line.key) : 0)));
+  const width = Math.min(MAX_WIDTH, terminalWidth - 2);
+  const window = Math.max(1, terminalHeight - MARGIN_ROWS - FOOTER_HEIGHT - FRAME_CHROME);
+  const maxOffset = Math.max(0, lines.length - window);
+  const [offset, setOffset] = useState(0);
+  const top = Math.min(offset, maxOffset);
+  const scroll = (delta: number) => setOffset(Math.max(0, Math.min(maxOffset, top + delta)));
+
+  useInput((input, key) => {
+    if (key.escape || input === 'q' || input === '?') {
+      toggleHelp();
+      return;
+    }
+    if (key.downArrow || input === 'j') scroll(1);
+    else if (key.upArrow || input === 'k') scroll(-1);
+    else if (key.pageDown || input === ' ') scroll(window - 1);
+    else if (key.pageUp) scroll(-(window - 1));
+  });
+
+  const shown = lines.slice(top, top + window);
+  const inner = width - FRAME_INSET;
+  const actionWidth = Math.max(1, inner - keyWidth - KEY_GAP);
+  const aside = maxOffset > 0 ? `${top + 1}-${top + shown.length} of ${lines.length}` : '';
+  const hints = [
+    ...(maxOffset > 0 ? [`${glyphs.scrollUp}${glyphs.scrollDown} PgUp/PgDn scroll`] : []),
+    'Esc close',
+  ];
 
   return (
-    <Box
-      position="absolute"
-      width="100%"
-      height="100%"
-      justifyContent="center"
-      alignItems="center"
-    >
-      <Box
-        flexDirection="column"
-        borderStyle={glyphs.border('double')}
-        borderColor={theme.colors.primary}
-        padding={2}
-        backgroundColor={theme.colors.surface}
-      >
-        <Box marginBottom={1}>
-          <Text {...theme.ink.strong} bold>BD TUI - Keyboard Shortcuts</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0}>
-          <Text {...theme.ink.strong} bold>Navigation:</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>left/right / h/l</Text>  Move between columns</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>up/down / k/j</Text>    Move up/down in column</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>0</Text>               Jump to first issue</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>$ or G</Text>          Jump to last issue</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>: or g</Text>          Open command bar</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text {...theme.ink.strong} bold>Views:</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>1</Text>              Tree view (hierarchical)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>2</Text>              Kanban board view</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>3</Text>              Statistics & analytics dashboard</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>4</Text>              Memories (bd remember; d delete, r refresh)</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text {...theme.ink.strong} bold>Search & Filter:</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>/</Text>              Open search</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>f</Text>              Open filter panel</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>v</Text>              Choose which statuses are shown</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>c</Text>              Clear all filters and search</Text>
-          <Text {...theme.ink.faint}>  (Closed is hidden by default; children of a shown parent stay visible)</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text {...theme.ink.strong} bold>Actions:</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>N</Text>              Create new issue (Shift+N)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>e</Text>              Edit selected issue</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>x</Text>              Export/copy selected issue</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>z</Text>              Collapse/expand the whole tree</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>Enter / Space</Text>  Toggle detail panel</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>PgUp / PgDn</Text>    Page the description (the arrows too when the panel fills the view)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>m</Text>              Show the description as rendered Markdown or as source</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>r</Text>              Refresh data</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>u</Text>              Undo (view history)</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1}>
-          <Text {...theme.ink.strong} bold>Other:</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>t</Text>              Change theme / color scheme</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>n</Text>              Toggle notifications (sound + native)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>?</Text>              Toggle this help</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>q / Ctrl+C</Text>     Quit</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text {...theme.ink.strong} bold>Command Bar (: or g):</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:5</Text>              Jump to page 5</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:issue-id</Text>       Jump to issue by ID</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:s o/i/b/c</Text>      Set status</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:p 0-4</Text>          Set priority (P0 Critical {glyphs.arrowRight} P4 Backlog)</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:kanban/tree/stats/mem</Text>        Switch view</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:theme name</Text>     Change theme</Text>
-          <Text {...theme.ink.dim}>  <Text {...theme.ink.strong}>:new :edit :q</Text>   Create, edit, quit</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text {...theme.ink.strong} bold>Forms:</Text>
-          <Text {...theme.ink.faint}>  Tab / Shift+Tab   Navigate between fields</Text>
-          <Text {...theme.ink.faint}>  up/down           Change priority/status/type</Text>
-          <Text {...theme.ink.faint}>  Enter             Submit (with confirmation)</Text>
-          <Text {...theme.ink.faint}>  ESC               Cancel and return</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text {...theme.ink.faint}>Notifications alert you when:</Text>
-          <Text {...theme.ink.faint}>  - Tasks are completed (status changes to closed)</Text>
-          <Text {...theme.ink.faint}>  - Tasks become blocked</Text>
-        </Box>
-
-        <Box flexDirection="column" gap={0} marginTop={1} borderTop borderColor={theme.colors.border} paddingTop={1}>
-          <Text {...theme.ink.strong} bold>Terminal:</Text>
-          <Text {...theme.ink.faint}>  bdui --glyph-check   Print all three glyph tiers to pick one</Text>
-          <Text {...theme.ink.faint}>  BDUI_GLYPHS          fancy | safe | ascii</Text>
-          <Text {...theme.ink.faint}>  BDUI_COLOR           auto | 256 | 16 | none</Text>
-          <Text {...theme.ink.faint}>  BDUI_AMBIGUOUS       auto | narrow | wide</Text>
-        </Box>
-
-        <Box marginTop={2} justifyContent="center">
-          <Text {...theme.ink.faint}>Press ? to close</Text>
-        </Box>
-      </Box>
+    <Box position="absolute" width="100%" height="100%" justifyContent="center" alignItems="flex-start" paddingTop={MARGIN_ROWS}>
+      <Frame title="Keyboard shortcuts" aside={aside} hints={hints} width={width} floating>
+        {shown.map((line, index) => {
+          if (line.kind === 'blank') return <Text key={index}> </Text>;
+          if (line.kind === 'heading') return <Text key={index} {...theme.ink.strong} bold>{line.text}</Text>;
+          if (line.kind === 'note') return <Text key={index} {...theme.ink.faint}>{fitToWidth(line.text, inner, glyphs.ellipsis)}</Text>;
+          return (
+            <Box key={index}>
+              <Box width={keyWidth + KEY_GAP} flexShrink={0}>
+                <Text color={theme.colors.primary}>{line.key}</Text>
+              </Box>
+              <Text {...theme.ink.dim}>{fitToWidth(line.action, actionWidth, glyphs.ellipsis)}</Text>
+            </Box>
+          );
+        })}
+      </Frame>
     </Box>
   );
 }

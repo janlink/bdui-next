@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
+import { Frame } from './Frame';
+
+const PANEL_WIDTH = 56;
 import { getStatusColor } from '../utils/constants';
 import { STATUS_KEYS, STATUS_LABELS, statusCategory } from '../utils/visibility';
 
@@ -51,40 +54,23 @@ export function VisibilityPanel({ onClose }: VisibilityPanelProps) {
   });
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle={glyphs.border('double')}
-      borderColor={theme.colors.primary}
-      padding={1}
-      width={48}
-      backgroundColor={theme.colors.surface}
-    >
-      <Text bold color={theme.colors.primary}>Show statuses</Text>
-      <Text color={theme.colors.textDim}>Space toggle {glyphs.middot} r reset {glyphs.middot} Esc/Enter close</Text>
-
-      <Box flexDirection="column" marginTop={1}>
-        {STATUS_KEYS.map((key, index) => {
-          const isSelected = index === selectedIndex;
-          const checked = statusVisibility[key];
-          return (
-            <Box key={key}>
-              <Text color={theme.colors.primary}>{isSelected ? `${glyphs.caretCollapsed} ` : '  '}</Text>
-              <Text color={checked ? theme.colors.success : theme.colors.textDim}>
-                {checked ? '[x]' : '[ ]'}
-              </Text>
-              <Text color={getStatusColor(key, theme)}> {STATUS_LABELS[key]}</Text>
-              <Box flexGrow={1} />
-              <Text color={theme.colors.textDim}>{counts[key] ?? 0}</Text>
-            </Box>
-          );
-        })}
-      </Box>
-
-      <Box marginTop={1}>
-        <Text color={theme.colors.textDim}>
-          Closed children of a visible parent stay shown.
-        </Text>
-      </Box>
-    </Box>
+    <Frame title="Show statuses" hints={['Space toggle', 'r reset', 'Esc close']} width={PANEL_WIDTH} floating>
+      {STATUS_KEYS.map((key, index) => {
+        const isSelected = index === selectedIndex;
+        const checked = statusVisibility[key];
+        return (
+          <Box key={key}>
+            <Text color={theme.colors.primary}>{isSelected ? `${glyphs.selectArrow} ` : '  '}</Text>
+            <Text color={checked ? theme.colors.success : theme.colors.textDim}>
+              {checked ? glyphs.checkboxOn : glyphs.checkboxOff}
+            </Text>
+            <Text color={getStatusColor(key, theme)} bold={isSelected}> {STATUS_LABELS[key]}</Text>
+            <Box flexGrow={1} />
+            <Text color={theme.colors.textDim}>{counts[key] ?? 0}</Text>
+          </Box>
+        );
+      })}
+      <Text {...theme.ink.faint}>Closed children of a visible parent stay shown.</Text>
+    </Frame>
   );
 }

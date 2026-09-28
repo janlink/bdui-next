@@ -14,10 +14,10 @@ import { ExportDialog } from './ExportDialog';
 import { ThemeSelector } from './ThemeSelector';
 import { StatsView } from './StatsView';
 import { MemoriesView } from './MemoriesView';
-import { FiltersBanner } from './FiltersBanner';
+import { Floating } from './Frame';
 import { ConfirmDialog } from './ConfirmDialog';
 import { CommandBar } from './CommandBar';
-import { hasActiveFilters, listBudget, CHROME_HEIGHT, LAYOUT } from '../utils/constants';
+import { listBudget, CHROME_HEIGHT, LAYOUT } from '../utils/constants';
 import { Footer } from './Footer';
 import { Header, type HeaderStat } from './Header';
 
@@ -216,12 +216,11 @@ export function Board() {
     [data, searchQuery, filter, getStatsIssues],
   );
 
-  // Search, filter, the active-filter banner, and the command bar are shared
-  // chrome: they own keyboard input in every view, so they mount here rather
-  // than inside one view, and the view below shrinks by exactly what they take.
+  // Search, filter, and the command bar are shared chrome: they own keyboard
+  // input in every view, so they mount here rather than inside one view, dock
+  // under it, and the view shrinks by exactly what they take.
   const chromeHeight =
-    (hasActiveFilters(filter, searchQuery) ? CHROME_HEIGHT.filtersBanner : 0)
-    + (showSearch ? CHROME_HEIGHT.searchInput : 0)
+    (showSearch ? CHROME_HEIGHT.searchInput : 0)
     + (showFilter ? CHROME_HEIGHT.filterPanel : 0)
     + (showJumpToPage ? CHROME_HEIGHT.commandBar : 0);
   const viewHeight = Math.max(LAYOUT.issueCardHeight, terminalHeight - chromeHeight);
@@ -249,11 +248,6 @@ export function Board() {
 
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Shared chrome above every view */}
-      <FiltersBanner />
-      {showSearch && <SearchInput />}
-      {showFilter && <FilterPanel />}
-
       {/* Render view based on mode */}
       {viewMode === 'kanban' && <KanbanView height={viewHeight} />}
       {viewMode === 'tree' && (
@@ -287,40 +281,26 @@ export function Board() {
         />
       )}
 
-      {/* Command bar (vim-style) - shared across all views */}
+      {/* Shared chrome docked under every view */}
+      {showSearch && <SearchInput />}
+      {showFilter && <FilterPanel />}
       <CommandBar />
 
-      {/* Export dialog - shared across all views */}
+      {/* Floating dialogs - shared across all views */}
       {showExportDialog && (
-        <Box
-          position="absolute"
-          marginTop={Math.max(0, Math.floor(terminalHeight / 2) - 10)}
-          marginLeft={Math.max(0, Math.floor(terminalWidth / 2) - 35)}
-        >
+        <Floating>
           <ExportDialog issue={selectedIssue ?? null} onClose={toggleExportDialog} />
-        </Box>
+        </Floating>
       )}
-
-      {/* Theme selector - shared across all views */}
       {showThemeSelector && (
-        <Box
-          position="absolute"
-          marginTop={Math.max(0, Math.floor(terminalHeight / 2) - 10)}
-          marginLeft={Math.max(0, Math.floor(terminalWidth / 2) - 30)}
-        >
+        <Floating>
           <ThemeSelector onClose={toggleThemeSelector} />
-        </Box>
+        </Floating>
       )}
-
-      {/* Visibility panel - shared across all views */}
       {showVisibilityPanel && (
-        <Box
-          position="absolute"
-          marginTop={Math.max(0, Math.floor(terminalHeight / 2) - 6)}
-          marginLeft={Math.max(0, Math.floor(terminalWidth / 2) - 24)}
-        >
+        <Floating>
           <VisibilityPanel onClose={toggleVisibilityPanel} />
-        </Box>
+        </Floating>
       )}
 
       {/* Help overlay - shared across all views */}

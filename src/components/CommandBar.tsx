@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { useBeadsStore } from '../state/store';
+import { Cursor, Frame } from './Frame';
 import { closeIssue, updateIssue } from '../bd/commands';
 
 type CommandMode = 'command' | 'jump';
@@ -30,7 +31,7 @@ export function CommandBar() {
   const toggleVisibilityPanel = useBeadsStore(state => state.toggleVisibilityPanel);
   const resetStatusVisibility = useBeadsStore(state => state.resetStatusVisibility);
   const theme = useBeadsStore(state => state.theme);
-  const glyphs = useBeadsStore(state => state.glyphs);
+  const terminalWidth = useBeadsStore(state => state.terminalWidth);
 
   const [input, setInput] = useState('');
   const totalPages = getTotalPages();
@@ -221,7 +222,7 @@ export function CommandBar() {
     }
 
     // Accept alphanumeric, spaces, dashes, underscores
-    if (/^[a-zA-Z0-9\s\-_]$/.test(char)) {
+    if (!key.ctrl && !key.meta && /^[a-zA-Z0-9\s\-_]$/.test(char)) {
       setInput(prev => prev + char);
     }
   });
@@ -229,16 +230,17 @@ export function CommandBar() {
   if (!showCommandBar) return null;
 
   return (
-    <Box borderStyle={glyphs.border('single')} borderColor={theme.colors.primary} paddingX={1}>
-      <Text color={theme.colors.primary} bold>:</Text>
-      <Text color={theme.colors.text}>{input}</Text>
-      <Text color={theme.colors.textDim}>{glyphs.barDone}</Text>
-      <Box marginLeft={2}>
-        <Text color={theme.colors.textDim}>
-          {totalPages > 1 ? `pg ${currentPage}/${totalPages} | ` : ''}
-          q quit | s status | p priority | help
-        </Text>
+    <Frame
+      title="Command"
+      aside={totalPages > 1 ? `page ${currentPage}/${totalPages}` : ''}
+      hints={[':5 page', ':id jump', 's o/i/b/c status', 'p 0-4 priority', 'Esc close']}
+      width={terminalWidth}
+    >
+      <Box>
+        <Text color={theme.colors.primary} bold>:</Text>
+        <Text color={theme.colors.text}>{input}</Text>
+        <Cursor />
       </Box>
-    </Box>
+    </Frame>
   );
 }

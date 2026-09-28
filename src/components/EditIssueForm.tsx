@@ -3,6 +3,8 @@ import { Box, Text, useInput } from 'ink';
 import { updateIssue, type UpdateIssueParams } from '../bd/commands';
 import type { Issue } from '../types';
 import { useBeadsStore } from '../state/store';
+import { Frame, FRAME_INSET } from './Frame';
+import { FORM_LABEL_WIDTH, FormRow, formHints } from './FormRow';
 import { VALIDATION, validateTitle, PRIORITY_LABELS, STATUS_LABELS } from '../utils/constants';
 
 interface EditIssueFormProps {
@@ -18,7 +20,6 @@ const EDITABLE_STATUSES = ['open', 'in_progress', 'blocked', 'closed'];
 export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps) {
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
   const glyphs = useBeadsStore(state => state.glyphs);
-  const terminalHeight = useBeadsStore(state => state.terminalHeight);
   const showToast = useBeadsStore(state => state.showToast);
   const showConfirm = useBeadsStore(state => state.showConfirm);
   const showConfirmDialog = useBeadsStore(state => state.showConfirmDialog);
@@ -230,240 +231,70 @@ export function EditIssueForm({ issue, onClose, onSuccess }: EditIssueFormProps)
     }
   };
 
-  const primaryColor = theme.colors.primary;
-
-  // Field changed indicator
   const isFieldChanged = (field: string) => changedFields.includes(field);
+  const inner = terminalWidth - FRAME_INSET;
+  const row = (field: FormField) => ({ active: currentField === field, changed: isFieldChanged(field), width: inner });
+  const changes = hasChanges ? ` ${glyphs.middot} ${changedFields.length} change${changedFields.length !== 1 ? 's' : ''}` : '';
 
   return (
-    <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Header */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Box justifyContent="space-between">
-          <Text bold color={primaryColor}>
-            Edit Issue: {issue.id}
-          </Text>
-          <Text dimColor>
-            {terminalWidth}x{terminalHeight}
-          </Text>
-        </Box>
-        <Box gap={2}>
-          <Text dimColor>
-            ESC to cancel | Tab/Shift+Tab to navigate | Enter to submit
-          </Text>
-          {hasChanges && (
-            <Text color={theme.colors.warning}>
-              [{changedFields.length} change{changedFields.length !== 1 ? 's' : ''}]
-            </Text>
-          )}
-        </Box>
-      </Box>
-
-      {/* Form Content */}
-      <Box flexDirection="column" padding={2} borderStyle={glyphs.border('single')} borderColor={primaryColor}>
-        {/* Title - with character count and change indicator */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box justifyContent="space-between">
-            <Box gap={1}>
-              <Text color={currentField === 'title' ? primaryColor : theme.colors.text} bold>
-                Title * {currentField === 'title' && <Text color={primaryColor}>(editing)</Text>}
-              </Text>
-              {isFieldChanged('title') && <Text color={theme.colors.warning}>[modified]</Text>}
-            </Box>
-            <Text color={titleCharCount > VALIDATION.title.maxLength * 0.9 ? theme.colors.warning : theme.colors.textDim}>
-              {titleCharCount}/{VALIDATION.title.maxLength}
-            </Text>
-          </Box>
-          <Box
-            borderStyle={glyphs.border('single')}
-            borderColor={
-              currentField === 'title'
-                ? (titleValidation.valid || formData.title === '' ? primaryColor : theme.colors.error)
-                : isFieldChanged('title')
-                ? theme.colors.warning
-                : theme.colors.border
-            }
-            paddingX={1}
-          >
-            <Text>{formData.title}</Text>
-            {currentField === 'title' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
+    <Frame
+      title={`Edit ${issue.id}`}
+      aside={`field ${currentFieldIndex + 1}/${fields.length}${changes}`}
+      hints={formHints(glyphs)}
+      width={terminalWidth}
+    >
+      <Box flexDirection="column" marginTop={1} gap={1}>
+        <Box flexDirection="column">
+          <FormRow
+            {...row('title')}
+            label="Title"
+            required
+            value={formData.title}
+            invalid={!titleValidation.valid && formData.title !== ''}
+            counter={`${titleCharCount}/${VALIDATION.title.maxLength}`}
+            counterWarning={titleCharCount > VALIDATION.title.maxLength * 0.9}
+          />
           {currentField === 'title' && !titleValidation.valid && formData.title !== '' && (
-            <Text color={theme.colors.error}>{titleValidation.error}</Text>
+            <Box marginLeft={FORM_LABEL_WIDTH}>
+              <Text color={theme.colors.error}>{titleValidation.error}</Text>
+            </Box>
           )}
         </Box>
-
-        {/* Status, Priority in a row - Status first since it's often the primary edit */}
-        <Box gap={4} marginBottom={2}>
-          {/* Status */}
-          <Box flexDirection="column" width="50%">
-            <Box gap={1}>
-              <Text color={currentField === 'status' ? primaryColor : theme.colors.text} bold>
-                Status {currentField === 'status' && <Text color={primaryColor}>(use up/down)</Text>}
-              </Text>
-              {isFieldChanged('status') && <Text color={theme.colors.warning}>[modified]</Text>}
-            </Box>
-            <Box
-              borderStyle={glyphs.border('single')}
-              borderColor={
-                currentField === 'status'
-                  ? primaryColor
-                  : isFieldChanged('status')
-                  ? theme.colors.warning
-                  : theme.colors.border
-              }
-              paddingX={1}
-            >
-              <Text color={theme.colors.text}>
-                {STATUS_LABELS[formData.status] || formData.status}
-              </Text>
-            </Box>
-          </Box>
-
-          {/* Priority */}
-          <Box flexDirection="column" width="50%">
-            <Box gap={1}>
-              <Text color={currentField === 'priority' ? primaryColor : theme.colors.text} bold>
-                Priority {currentField === 'priority' && <Text color={primaryColor}>(use up/down)</Text>}
-              </Text>
-              {isFieldChanged('priority') && <Text color={theme.colors.warning}>[modified]</Text>}
-            </Box>
-            <Box
-              borderStyle={glyphs.border('single')}
-              borderColor={
-                currentField === 'priority'
-                  ? primaryColor
-                  : isFieldChanged('priority')
-                  ? theme.colors.warning
-                  : theme.colors.border
-              }
-              paddingX={1}
-            >
-              <Text color={theme.colors.text}>
-                P{formData.priority} - {PRIORITY_LABELS[formData.priority]}
-              </Text>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Issue Type (read-only) */}
-        <Box flexDirection="column" marginBottom={2} width="50%">
-          <Text color={theme.colors.textDim} bold>
-            Type <Text color={theme.colors.textDim}>(read-only)</Text>
-          </Text>
-          <Box borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
-            <Text color={theme.colors.textDim}>{issue.issue_type || 'task'}</Text>
-          </Box>
-        </Box>
-
-        {/* Description */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box justifyContent="space-between">
-            <Box gap={1}>
-              <Text color={currentField === 'description' ? primaryColor : theme.colors.text} bold>
-                Description {currentField === 'description' && <Text color={primaryColor}>(editing)</Text>}
-              </Text>
-              {isFieldChanged('description') && <Text color={theme.colors.warning}>[modified]</Text>}
-            </Box>
-            <Text color={theme.colors.textDim}>
-              {formData.description.length}/{VALIDATION.description.maxLength}
-            </Text>
-          </Box>
-          <Box
-            borderStyle={glyphs.border('single')}
-            borderColor={
-              currentField === 'description'
-                ? primaryColor
-                : isFieldChanged('description')
-                ? theme.colors.warning
-                : theme.colors.border
-            }
-            paddingX={1}
-          >
-            <Text>{formData.description || <Text color={theme.colors.textDim}>(no description)</Text>}</Text>
-            {currentField === 'description' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-        </Box>
-
-        {/* Assignee */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box gap={1}>
-            <Text color={currentField === 'assignee' ? primaryColor : theme.colors.text} bold>
-              Assignee {currentField === 'assignee' && <Text color={primaryColor}>(editing)</Text>}
-            </Text>
-            {isFieldChanged('assignee') && <Text color={theme.colors.warning}>[modified]</Text>}
-          </Box>
-          <Box
-            borderStyle={glyphs.border('single')}
-            borderColor={
-              currentField === 'assignee'
-                ? primaryColor
-                : isFieldChanged('assignee')
-                ? theme.colors.warning
-                : theme.colors.border
-            }
-            paddingX={1}
-          >
-            <Text>{formData.assignee || <Text color={theme.colors.textDim}>(unassigned)</Text>}</Text>
-            {currentField === 'assignee' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-        </Box>
-
-        {/* Labels */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box gap={1}>
-            <Text color={currentField === 'labels' ? primaryColor : theme.colors.text} bold>
-              Labels {currentField === 'labels' && <Text color={primaryColor}>(editing)</Text>}
-            </Text>
-            {isFieldChanged('labels') && <Text color={theme.colors.warning}>[modified]</Text>}
-          </Box>
-          <Box
-            borderStyle={glyphs.border('single')}
-            borderColor={
-              currentField === 'labels'
-                ? primaryColor
-                : isFieldChanged('labels')
-                ? theme.colors.warning
-                : theme.colors.border
-            }
-            paddingX={1}
-          >
-            <Text>{formData.labels || <Text color={theme.colors.textDim}>(no labels - comma-separated)</Text>}</Text>
-            {currentField === 'labels' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-          {formData.labels && (
-            <Text color={theme.colors.textDim}>
-              Labels: {formData.labels.split(',').map(l => l.trim()).filter(l => l).join(', ') || '(none)'}
-            </Text>
-          )}
-        </Box>
-
-        {/* Status messages */}
-        {error && (
-          <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.error} paddingX={1}>
-            <Text color={theme.colors.error} bold>Error: </Text>
-            <Text color={theme.colors.error}>{error}</Text>
-          </Box>
-        )}
-
-        {isSubmitting && (
-          <Box marginTop={1}>
-            <Text color={theme.colors.warning}>Updating issue...</Text>
-          </Box>
-        )}
+        <FormRow
+          {...row('status')}
+          label="Status"
+          kind="choice"
+          value={STATUS_LABELS[formData.status] || formData.status}
+        />
+        <FormRow
+          {...row('priority')}
+          label="Priority"
+          kind="choice"
+          value={`P${formData.priority} ${PRIORITY_LABELS[formData.priority]}`}
+        />
+        <FormRow label="Type" kind="readonly" active={false} width={inner} value={issue.issue_type || 'task'} />
+        <FormRow
+          {...row('description')}
+          label="Description"
+          value={formData.description}
+          placeholder="no description"
+          counter={`${formData.description.length}/${VALIDATION.description.maxLength}`}
+        />
+        <FormRow {...row('assignee')} label="Assignee" value={formData.assignee} placeholder="unassigned" />
+        <FormRow {...row('labels')} label="Labels" value={formData.labels} placeholder="no labels, comma-separated" />
       </Box>
 
-      {/* Footer */}
-      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
-        <Box justifyContent="space-between">
-          <Text dimColor>
-            Tab/Shift+Tab: Navigate | up/down: Change values | Enter: Submit | ESC: Cancel
-          </Text>
-          <Text color={primaryColor}>
-            Field {currentFieldIndex + 1}/{fields.length}
-          </Text>
+      {error && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.error} bold>Error: </Text>
+          <Text color={theme.colors.error}>{error}</Text>
         </Box>
-      </Box>
-    </Box>
+      )}
+      {isSubmitting && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.warning}>Updating issue...</Text>
+        </Box>
+      )}
+    </Frame>
   );
 }

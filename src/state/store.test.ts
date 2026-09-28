@@ -115,7 +115,7 @@ test('exact ID selection wins over an earlier fuzzy match', () => {
 
 test('every input-owning overlay counts as an open modal', () => {
   const flags = [
-    'showSearch', 'showFilter', 'showExportDialog',
+    'showHelp', 'showSearch', 'showFilter', 'showExportDialog',
     'showThemeSelector', 'showJumpToPage', 'showVisibilityPanel', 'showConfirmDialog',
   ] as const;
 

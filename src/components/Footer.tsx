@@ -2,9 +2,9 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import stringWidth from 'string-width';
 import { useBeadsStore } from '../state/store';
-import { VIEW_NAMES } from '../utils/constants';
+import { VIEW_NAMES, hasActiveFilters } from '../utils/constants';
 import { fitToWidth } from '../utils/cells';
-import { STATUS_KEYS, STATUS_LABELS } from '../utils/visibility';
+import { STATUS_KEYS, STATUS_LABELS, type StatusKey } from '../utils/visibility';
 import { Rule, segmentCells, words, type Segment } from './Rule';
 import type { GlyphSet } from '../session/glyphs';
 import type { Theme } from '../themes/themes';
@@ -133,6 +133,46 @@ export function fitHintsRow(
   return { hints: kept, legend: false };
 }
 
+// A search quoted in the note is cut to this many cells.
+const SEARCH_NOTE_CELLS = 15;
+
+interface ActiveFilter {
+  assignee?: string;
+  tags?: string[];
+  status?: string;
+  priority?: number;
+}
+
+/** The words the rule shows for the search and each active filter. */
+export function activeFilterWords(filter: ActiveFilter, searchQuery: string, ellipsis: string): string[] {
+  const out: string[] = [];
+  const query = searchQuery.trim();
+  if (query) out.push(`search "${fitToWidth(query, SEARCH_NOTE_CELLS, ellipsis)}"`);
+  if (filter.assignee) out.push(filter.assignee);
+  if (filter.status) out.push(STATUS_LABELS[filter.status as StatusKey]?.toLowerCase() ?? filter.status);
+  if (filter.priority !== undefined) out.push(`P${filter.priority}`);
+  if (filter.tags && filter.tags.length > 0) out.push(...filter.tags);
+  return out;
+}
+
+/**
+ * One note for everything that narrows the view: the active filters, the
+ * hidden statuses, and, while a filter is active, how many issues it leaves
+ * and the key that clears it.
+ */
+export function filterNote(
+  active: readonly string[],
+  hidden: readonly string[],
+  shown: number,
+  total: number,
+  separator: string,
+): string {
+  const items = [...active, ...(hidden.length > 0 ? [`${hidden.join(', ')} hidden`] : [])];
+  if (items.length === 0) return '';
+  const note = `filter: ${items.join(', ')}`;
+  return active.length > 0 ? `${note} ${separator} ${shown}/${total} ${separator} c clear` : note;
+}
+
 function trailerText(trailer: FooterTrailer | undefined, glyphs: GlyphSet): string {
   if (!trailer) return '';
   const parts: string[] = [];
@@ -155,13 +195,18 @@ export function Footer({ currentView, trailer, panel }: FooterProps) {
   const statusVisibility = useBeadsStore(state => state.statusVisibility);
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
   const toast = useBeadsStore(state => state.toastMessage);
+  const filter = useBeadsStore(state => state.filter);
+  const searchQuery = useBeadsStore(state => state.searchQuery);
+  const totalCount = useBeadsStore(state => state.data.issues.length);
+  const getFilteredIssues = useBeadsStore(state => state.getFilteredIssues);
+  const shownCount = hasActiveFilters(filter, searchQuery) ? getFilteredIssues().length : totalCount;
 
   const listWidth = panel ? terminalWidth - panel.width - 1 : terminalWidth;
   const hidden = STATUS_KEYS.filter(key => !statusVisibility[key]).map(key => STATUS_LABELS[key].toLowerCase());
   const fit = fitFooterRule(
     listWidth,
     named => segmentCells(tabSegments(named, currentView, theme, glyphs)),
-    hidden.length > 0 ? `filter: ${hidden.join(', ')} hidden` : '',
+    filterNote(activeFilterWords(filter, searchQuery, glyphs.ellipsis), hidden, shownCount, totalCount, glyphs.middot),
     trailerText(trailer, glyphs),
     glyphs.ellipsis,
   );

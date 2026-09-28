@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { createIssue } from '../bd/commands';
 import { useBeadsStore } from '../state/store';
+import { Frame, FRAME_INSET } from './Frame';
+import { FORM_LABEL_WIDTH, FormRow, formHints } from './FormRow';
 import { VALIDATION, validateTitle, PRIORITY_LABELS } from '../utils/constants';
 
 interface CreateIssueFormProps {
@@ -17,7 +19,6 @@ const ISSUE_TYPES: CreatableIssueType[] = ['task', 'epic', 'bug', 'feature', 'ch
 export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
   const terminalWidth = useBeadsStore(state => state.terminalWidth);
   const glyphs = useBeadsStore(state => state.glyphs);
-  const terminalHeight = useBeadsStore(state => state.terminalHeight);
   const showToast = useBeadsStore(state => state.showToast);
   const showConfirm = useBeadsStore(state => state.showConfirm);
   const showConfirmDialog = useBeadsStore(state => state.showConfirmDialog);
@@ -170,148 +171,63 @@ export function CreateIssueForm({ onClose, onSuccess }: CreateIssueFormProps) {
     }
   };
 
-  const primaryColor = theme.colors.primary;
+  const inner = terminalWidth - FRAME_INSET;
+  const row = (field: FormField) => ({ active: currentField === field, width: inner });
 
   return (
-    <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Header */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Box justifyContent="space-between">
-          <Text bold color={primaryColor}>
-            Create New Issue
-          </Text>
-          <Text dimColor>
-            {terminalWidth}x{terminalHeight}
-          </Text>
-        </Box>
-        <Text dimColor>
-          ESC to cancel | Tab/Shift+Tab to navigate fields | Enter to submit
-        </Text>
-      </Box>
-
-      {/* Form Content */}
-      <Box flexDirection="column" padding={2} borderStyle={glyphs.border('single')} borderColor={primaryColor}>
-        {/* Title - with character count */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box justifyContent="space-between">
-            <Text color={currentField === 'title' ? primaryColor : theme.colors.text} bold>
-              Title * {currentField === 'title' && <Text color={primaryColor}>(editing)</Text>}
-            </Text>
-            <Text color={titleCharCount > VALIDATION.title.maxLength * 0.9 ? theme.colors.warning : theme.colors.textDim}>
-              {titleCharCount}/{VALIDATION.title.maxLength}
-            </Text>
-          </Box>
-          <Box
-            borderStyle={glyphs.border('single')}
-            borderColor={
-              currentField === 'title'
-                ? (titleValidation.valid || formData.title === '' ? primaryColor : theme.colors.error)
-                : theme.colors.border
-            }
-            paddingX={1}
-          >
-            <Text>{formData.title || <Text color={theme.colors.textDim}>(enter issue title)</Text>}</Text>
-            {currentField === 'title' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
+    <Frame
+      title="New issue"
+      aside={`field ${currentFieldIndex + 1}/${fields.length}`}
+      hints={formHints(glyphs)}
+      width={terminalWidth}
+    >
+      <Box flexDirection="column" marginTop={1} gap={1}>
+        <Box flexDirection="column">
+          <FormRow
+            {...row('title')}
+            label="Title"
+            required
+            value={formData.title}
+            placeholder="issue title"
+            invalid={!titleValidation.valid && formData.title !== ''}
+            counter={`${titleCharCount}/${VALIDATION.title.maxLength}`}
+            counterWarning={titleCharCount > VALIDATION.title.maxLength * 0.9}
+          />
           {currentField === 'title' && !titleValidation.valid && formData.title !== '' && (
-            <Text color={theme.colors.error}>{titleValidation.error}</Text>
+            <Box marginLeft={FORM_LABEL_WIDTH}>
+              <Text color={theme.colors.error}>{titleValidation.error}</Text>
+            </Box>
           )}
         </Box>
-
-        {/* Priority and Type in a row - moved up for faster entry */}
-        <Box gap={4} marginBottom={2}>
-          {/* Priority */}
-          <Box flexDirection="column" width="50%">
-            <Text color={currentField === 'priority' ? primaryColor : theme.colors.text} bold>
-              Priority {currentField === 'priority' && <Text color={primaryColor}>(use up/down)</Text>}
-            </Text>
-            <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'priority' ? primaryColor : theme.colors.border} paddingX={1}>
-              <Text color={theme.colors.text}>
-                P{formData.priority} - {PRIORITY_LABELS[formData.priority]}
-              </Text>
-            </Box>
-          </Box>
-
-          {/* Issue Type */}
-          <Box flexDirection="column" width="50%">
-            <Text color={currentField === 'type' ? primaryColor : theme.colors.text} bold>
-              Type {currentField === 'type' && <Text color={primaryColor}>(use up/down)</Text>}
-            </Text>
-            <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'type' ? primaryColor : theme.colors.border} paddingX={1}>
-              <Text color={theme.colors.text}>{formData.issueType}</Text>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Description */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Box justifyContent="space-between">
-            <Text color={currentField === 'description' ? primaryColor : theme.colors.text} bold>
-              Description {currentField === 'description' && <Text color={primaryColor}>(editing)</Text>}
-            </Text>
-            <Text color={theme.colors.textDim}>
-              {formData.description.length}/{VALIDATION.description.maxLength}
-            </Text>
-          </Box>
-          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'description' ? primaryColor : theme.colors.border} paddingX={1}>
-            <Text>{formData.description || <Text color={theme.colors.textDim}>(optional - enter issue description)</Text>}</Text>
-            {currentField === 'description' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-        </Box>
-
-        {/* Assignee */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Text color={currentField === 'assignee' ? primaryColor : theme.colors.text} bold>
-            Assignee {currentField === 'assignee' && <Text color={primaryColor}>(editing)</Text>}
-          </Text>
-          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'assignee' ? primaryColor : theme.colors.border} paddingX={1}>
-            <Text>{formData.assignee || <Text color={theme.colors.textDim}>(optional - assign to someone)</Text>}</Text>
-            {currentField === 'assignee' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-        </Box>
-
-        {/* Labels */}
-        <Box flexDirection="column" marginBottom={2}>
-          <Text color={currentField === 'labels' ? primaryColor : theme.colors.text} bold>
-            Labels {currentField === 'labels' && <Text color={primaryColor}>(editing)</Text>}
-          </Text>
-          <Box borderStyle={glyphs.border('single')} borderColor={currentField === 'labels' ? primaryColor : theme.colors.border} paddingX={1}>
-            <Text>{formData.labels || <Text color={theme.colors.textDim}>(optional - comma-separated labels)</Text>}</Text>
-            {currentField === 'labels' && <Text color={theme.colors.textDim}>|</Text>}
-          </Box>
-          {formData.labels && (
-            <Text color={theme.colors.textDim}>
-              Labels: {formData.labels.split(',').map(l => l.trim()).filter(l => l).join(', ') || '(none)'}
-            </Text>
-          )}
-        </Box>
-
-        {/* Status messages */}
-        {error && (
-          <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.error} paddingX={1}>
-            <Text color={theme.colors.error} bold>Error: </Text>
-            <Text color={theme.colors.error}>{error}</Text>
-          </Box>
-        )}
-
-        {isSubmitting && (
-          <Box marginTop={1}>
-            <Text color={theme.colors.warning}>Creating issue...</Text>
-          </Box>
-        )}
+        <FormRow
+          {...row('priority')}
+          label="Priority"
+          kind="choice"
+          value={`P${formData.priority} ${PRIORITY_LABELS[formData.priority]}`}
+        />
+        <FormRow {...row('type')} label="Type" kind="choice" value={formData.issueType} />
+        <FormRow
+          {...row('description')}
+          label="Description"
+          value={formData.description}
+          placeholder="optional"
+          counter={`${formData.description.length}/${VALIDATION.description.maxLength}`}
+        />
+        <FormRow {...row('assignee')} label="Assignee" value={formData.assignee} placeholder="optional" />
+        <FormRow {...row('labels')} label="Labels" value={formData.labels} placeholder="optional, comma-separated" />
       </Box>
 
-      {/* Footer */}
-      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
-        <Box justifyContent="space-between">
-          <Text dimColor>
-            Tab/Shift+Tab: Navigate | up/down: Change values | Enter: Submit | ESC: Cancel
-          </Text>
-          <Text color={primaryColor}>
-            Field {currentFieldIndex + 1}/{fields.length}
-          </Text>
+      {error && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.error} bold>Error: </Text>
+          <Text color={theme.colors.error}>{error}</Text>
         </Box>
-      </Box>
-    </Box>
+      )}
+      {isSubmitting && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.warning}>Creating issue...</Text>
+        </Box>
+      )}
+    </Frame>
   );
 }
