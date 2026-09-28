@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
+import { fitToWidth } from '../utils/cells';
+import { Frame } from './Frame';
 import { copyToClipboard, exportToFile, formatIssueMarkdown, formatIssueJSON, formatIssuePlainText } from '../utils/export';
 import type { Issue } from '../types';
 
@@ -17,6 +19,9 @@ type ExportAction = 'clipboard' | 'file';
 
 const FORMATS: ExportFormat[] = ['markdown', 'json', 'text'];
 const ACTIONS: ExportAction[] = ['clipboard', 'file'];
+
+const DIALOG_WIDTH = 70;
+const LABEL_WIDTH = 10;
 
 export function ExportDialog({ issue, onClose }: ExportDialogProps) {
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('markdown');
@@ -116,89 +121,63 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
     }
   };
 
+  const hints = [
+    `${glyphs.arrowLeft}${glyphs.arrowRight} format`,
+    `${glyphs.scrollUp}${glyphs.scrollDown} action`,
+    'Enter export',
+    'Esc cancel',
+  ];
+
   if (!issue) {
     return (
-      <Box
-        flexDirection="column"
-        borderStyle={glyphs.border('double')}
-        borderColor={theme.colors.primary}
-        padding={1}
-        width={70}
-        backgroundColor={theme.colors.surface}
-      >
-        <Text {...theme.ink.strong}>Export Issue</Text>
-        <Text {...theme.ink.faint}>Nothing is selected. ESC to close.</Text>
-      </Box>
+      <Frame title="Export" hints={['Esc close']} width={DIALOG_WIDTH} floating>
+        <Text {...theme.ink.faint}>Nothing is selected.</Text>
+      </Frame>
     );
   }
 
+  const label = (text: string) => <Box width={LABEL_WIDTH} flexShrink={0}><Text {...theme.ink.dim}>{text}</Text></Box>;
+
   return (
-    <Box
-      flexDirection="column"
-      borderStyle={glyphs.border('double')}
-      borderColor={theme.colors.primary}
-      padding={1}
-      width={70}
-      backgroundColor={theme.colors.surface}
-    >
-      <Text {...theme.ink.strong}>
-        Export Issue: {issue.id}
-      </Text>
-      <Text {...theme.ink.faint}>
-        ESC to cancel | {glyphs.arrowLeft}/{glyphs.arrowRight} change format | {glyphs.scrollUp}/{glyphs.scrollDown} change action | Enter to export
-      </Text>
-
+    <Frame title={`Export ${issue.id}`} hints={hints} width={DIALOG_WIDTH} floating>
       <Box flexDirection="column" marginTop={1}>
-        {/* Format selection */}
-        <Box marginBottom={1}>
-          <Text {...theme.ink.strong}>Format:</Text>
-        </Box>
-        <Box gap={2} marginBottom={1}>
-          {FORMATS.map(format => (
-            <Box
-              key={format}
-              borderStyle={glyphs.border('single')}
-              borderColor={selectedFormat === format ? theme.colors.primary : theme.colors.border}
-              paddingX={1}
-            >
-              <Text {...(selectedFormat === format ? theme.ink.strong : theme.ink.faint)}>
-                {format.toUpperCase()}
+        <Box>
+          {label('Format')}
+          <Box gap={2}>
+            {FORMATS.map(format => (
+              <Text
+                key={format}
+                {...(selectedFormat === format ? { color: theme.colors.primary, bold: true } : theme.ink.faint)}
+              >
+                {selectedFormat === format ? `${glyphs.selectArrow} ` : '  '}{format.toUpperCase()}
               </Text>
-            </Box>
-          ))}
-        </Box>
-
-        {/* Action selection */}
-        <Box marginBottom={1}>
-          <Text {...theme.ink.strong}>Action:</Text>
-        </Box>
-        <Box flexDirection="column" gap={0} marginBottom={1}>
-          <Box>
-            <Text {...(selectedAction === 'clipboard' ? theme.ink.strong : theme.ink.faint)}>
-              {selectedAction === 'clipboard' ? `${glyphs.selectArrow} ` : '  '}
-              Copy to Clipboard
-            </Text>
-          </Box>
-          <Box>
-            <Text {...(selectedAction === 'file' ? theme.ink.strong : theme.ink.faint)}>
-              {selectedAction === 'file' ? `${glyphs.selectArrow} ` : '  '}
-              Export to File
-            </Text>
+            ))}
           </Box>
         </Box>
 
-        {/* Preview */}
-        <Box flexDirection="column" borderStyle={glyphs.border('single')} borderColor={theme.colors.border} padding={1} marginTop={1}>
-          <Text {...theme.ink.faint}>Preview:</Text>
-          <Text {...theme.ink.text}>
-            {selectedFormat === 'markdown' && '# '}
-            {issue.title.substring(0, 50)}
-            {issue.title.length > 50 && '...'}
+        <Box marginTop={1}>
+          {label('Action')}
+          <Box flexDirection="column">
+            {ACTIONS.map(action => (
+              <Text
+                key={action}
+                {...(selectedAction === action ? { color: theme.colors.primary, bold: true } : theme.ink.faint)}
+              >
+                {selectedAction === action ? `${glyphs.selectArrow} ` : '  '}
+                {action === 'clipboard' ? 'Copy to clipboard' : 'Export to file'}
+              </Text>
+            ))}
+          </Box>
+        </Box>
+
+        <Box marginTop={1}>
+          {label('Preview')}
+          <Text {...theme.ink.text} wrap="truncate-end">
+            {fitToWidth(`${selectedFormat === 'markdown' ? '# ' : ''}${issue.title}`, DIALOG_WIDTH - 4 - LABEL_WIDTH, glyphs.ellipsis)}
           </Text>
         </Box>
       </Box>
 
-      {/* Status message */}
       {status && (
         <Box marginTop={1}>
           <Text color={status.type === 'success' ? theme.colors.success : theme.colors.error}>
@@ -207,12 +186,11 @@ export function ExportDialog({ issue, onClose }: ExportDialogProps) {
         </Box>
       )}
 
-      {/* Loading indicator */}
       {isExporting && (
         <Box marginTop={1}>
           <Text color={theme.colors.warning}>Exporting...</Text>
         </Box>
       )}
-    </Box>
+    </Frame>
   );
 }

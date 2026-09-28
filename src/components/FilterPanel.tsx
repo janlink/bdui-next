@@ -2,6 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
 import { PRIORITY_LABELS } from '../utils/constants';
+import { STATUS_LABELS, type StatusKey } from '../utils/visibility';
+import { Frame } from './Frame';
+
+/** A column heading, its visible options, and the "+N more" row. */
+export const FILTER_BODY_ROWS = 1 + 5 + 1;
+
+const statusLabel = (status: string) => STATUS_LABELS[status as StatusKey] ?? status;
 
 export function FilterPanel() {
   const data = useBeadsStore(state => state.data);
@@ -11,6 +18,7 @@ export function FilterPanel() {
   const toggleFilter = useBeadsStore(state => state.toggleFilter);
   const theme = useBeadsStore(state => state.theme);
   const glyphs = useBeadsStore(state => state.glyphs);
+  const terminalWidth = useBeadsStore(state => state.terminalWidth);
 
   const [selectedFilterType, setSelectedFilterType] = useState<'assignee' | 'tags' | 'priority' | 'status'>('assignee');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -140,24 +148,23 @@ export function FilterPanel() {
 
   const getPriorityLabel = (priority: number) => `P${priority} (${PRIORITY_LABELS[priority]})`;
 
-  return (
-    <Box
-      flexDirection="column"
-      borderStyle={glyphs.border('double')}
-      borderColor={theme.colors.primary}
-      paddingX={1}
-      marginBottom={1}
-    >
-      <Box>
-        <Text {...theme.ink.strong}>Filters </Text>
-        <Text {...theme.ink.faint}>
-          (Tab to switch {glyphs.bullet} {glyphs.scrollUp}{glyphs.scrollDown} navigate {glyphs.bullet} Space to toggle {glyphs.bullet} C to clear {glyphs.bullet} ESC to close)
-        </Text>
-      </Box>
+  const activeParts = [
+    filter.assignee,
+    ...(filter.tags ?? []),
+    filter.priority !== undefined ? `P${filter.priority}` : undefined,
+    filter.status ? statusLabel(filter.status) : undefined,
+  ].filter((part): part is string => Boolean(part));
 
-      <Box marginTop={1} gap={2}>
+  return (
+    <Frame
+      title="Filters"
+      aside={activeParts.length > 0 ? `active: ${activeParts.join(', ')}` : 'none active'}
+      hints={['Tab switch', 'Space toggle', 'c clear', 'Esc close']}
+      width={terminalWidth}
+    >
+      <Box gap={2} height={FILTER_BODY_ROWS}>
         {/* Assignee Filter */}
-        <Box flexDirection="column" width={25}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <Text
             bold
             color={selectedFilterType === 'assignee' ? theme.colors.primary : theme.colors.textFaint}
@@ -178,11 +185,11 @@ export function FilterPanel() {
               </Box>
             ))
           )}
-          {uniqueAssignees.length > 5 && <Text {...theme.ink.faint}>  ... +{uniqueAssignees.length - 5} more</Text>}
+          {uniqueAssignees.length > 5 && <Text {...theme.ink.faint}>  +{uniqueAssignees.length - 5} more</Text>}
         </Box>
 
         {/* Tags Filter */}
-        <Box flexDirection="column" width={25}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <Text
             bold
             color={selectedFilterType === 'tags' ? theme.colors.primary : theme.colors.textFaint}
@@ -203,11 +210,11 @@ export function FilterPanel() {
               </Box>
             ))
           )}
-          {uniqueTags.length > 5 && <Text {...theme.ink.faint}>  ... +{uniqueTags.length - 5} more</Text>}
+          {uniqueTags.length > 5 && <Text {...theme.ink.faint}>  +{uniqueTags.length - 5} more</Text>}
         </Box>
 
         {/* Priority Filter */}
-        <Box flexDirection="column" width={30}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <Text
             bold
             color={selectedFilterType === 'priority' ? theme.colors.primary : theme.colors.textFaint}
@@ -227,7 +234,7 @@ export function FilterPanel() {
         </Box>
 
         {/* Status Filter */}
-        <Box flexDirection="column" width={25}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <Text
             bold
             color={selectedFilterType === 'status' ? theme.colors.primary : theme.colors.textFaint}
@@ -240,24 +247,12 @@ export function FilterPanel() {
               <Text color={selectedFilterType === 'status' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
                 {selectedFilterType === 'status' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
                 {isSelected('status', status) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
-                {status}
+                {statusLabel(status)}
               </Text>
             </Box>
           ))}
         </Box>
       </Box>
-
-      {/* Active filters summary */}
-      <Box marginTop={1} borderStyle={glyphs.border('single')} borderColor={theme.colors.border} paddingX={1}>
-        <Text {...theme.ink.faint}>Active: </Text>
-        {filter.assignee && <Text {...theme.ink.text}>{filter.assignee} </Text>}
-        {filter.tags && filter.tags.length > 0 && <Text {...theme.ink.text}>{filter.tags.join(', ')} </Text>}
-        {filter.priority !== undefined && <Text {...theme.ink.text}>P{filter.priority} </Text>}
-        {filter.status && <Text {...theme.ink.text}>{filter.status} </Text>}
-        {!filter.assignee && (!filter.tags || filter.tags.length === 0) && filter.priority === undefined && !filter.status && (
-          <Text {...theme.ink.faint}>None</Text>
-        )}
-      </Box>
-    </Box>
+    </Frame>
   );
 }

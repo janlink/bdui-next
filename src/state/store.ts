@@ -233,7 +233,8 @@ function filterIssues(
 // Search, filter, dialogs, and forms own keyboard input exclusively; every
 // normal-navigation handler must fall silent while one of them is mounted.
 export function isModalOpen(state: BeadsStore): boolean {
-  return state.showSearch
+  return state.showHelp
+    || state.showSearch
     || state.showFilter
     || state.showExportDialog
     || state.showThemeSelector

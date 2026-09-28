@@ -77,7 +77,7 @@ const VIEW_MODES = ['kanban', 'tree', 'stats'] as const;
 test('the search box and filter panel render in every view', async () => {
   for (const viewMode of VIEW_MODES) {
     useBeadsStore.setState({ viewMode, showSearch: true, showFilter: false });
-    expect(await renderBoard()).toContain('Search:');
+    expect(await renderBoard()).toMatch(/│ Search\s/);
 
     useBeadsStore.setState({ viewMode, showSearch: false, showFilter: true });
     expect(await renderBoard()).toContain('Filters');
@@ -89,9 +89,8 @@ test('the search box echoes the query and its N/M match count', async () => {
 
   const output = await renderBoard();
 
-  expect(output).toContain('Search: ');
+  expect(output).toMatch(/│ Search {2}1\/3 match/);
   expect(output).toContain('target');
-  expect(output).toContain('1/3 match');
 });
 
 test('search narrows the list to matches plus their ancestor chain', async () => {
@@ -104,11 +103,13 @@ test('search narrows the list to matches plus their ancestor chain', async () =>
   expect(output).not.toContain('epic.miss');
 });
 
-test('the active-filter banner renders outside the Kanban view', async () => {
-  useBeadsStore.setState({ viewMode: 'tree', searchQuery: 'target' });
+test('the footer rule names the active search in every view', async () => {
+  for (const viewMode of VIEW_MODES) {
+    useBeadsStore.setState({ viewMode, searchQuery: 'target' });
 
-  const output = await renderBoard();
+    const output = await renderBoard();
 
-  expect(output).toContain('1 filter active');
-  expect(output).toContain('search: "target"');
+    expect(output).toContain('filter: search "target"');
+    expect(output).toContain('c clear');
+  }
 });

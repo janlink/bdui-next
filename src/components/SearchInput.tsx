@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useBeadsStore } from '../state/store';
+import { Cursor, Frame } from './Frame';
 
 export function SearchInput() {
   const searchQuery = useBeadsStore(state => state.searchQuery);
@@ -10,6 +11,7 @@ export function SearchInput() {
   const getFilteredIssues = useBeadsStore(state => state.getFilteredIssues);
   const totalCount = useBeadsStore(state => state.data.issues.length);
   const theme = useBeadsStore(state => state.theme);
+  const terminalWidth = useBeadsStore(state => state.terminalWidth);
 
   const filteredCount = getFilteredIssues().length;
 
@@ -31,28 +33,18 @@ export function SearchInput() {
   });
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle={glyphs.border('single')}
-      borderColor={theme.colors.primary}
-      paddingX={1}
-      marginBottom={1}
+    <Frame
+      title="Search"
+      aside={searchQuery.trim() ? `${filteredCount}/${totalCount} match${filteredCount !== 1 ? 'es' : ''}` : ''}
+      hints={['type:x', 'label:x', 'p0-p4', 'Enter/Esc close']}
+      width={terminalWidth}
     >
-      <Box gap={2}>
-        <Box>
-          <Text bold color={theme.colors.primary}>Search: </Text>
-          <Text color={theme.colors.text}>{searchQuery}</Text>
-          <Text color={theme.colors.textDim}>|</Text>
-        </Box>
-        {searchQuery.trim() && (
-          <Text color={theme.colors.textDim}>
-            {filteredCount}/{totalCount} match{filteredCount !== 1 ? 'es' : ''}
-          </Text>
-        )}
+      <Box>
+        <Text color={theme.colors.primary}>{glyphs.selectArrow} </Text>
+        <Text color={theme.colors.text}>{searchQuery}</Text>
+        <Cursor />
+        {!searchQuery && <Text {...theme.ink.faint}> words match id, title, description, assignee, labels</Text>}
       </Box>
-      <Text color={theme.colors.textDim}>
-        type:x label:x p0-p4, words match id/title/desc/assignee/labels | ESC to close
-      </Text>
-    </Box>
+    </Frame>
   );
 }

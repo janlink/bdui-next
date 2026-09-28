@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `z` in the tree view collapses every parent at every depth, and pressed again
   expands them all. A row the fold hides hands the cursor to its root.
 
+### Changed
+- Every dialog, panel, and form draws in one frame: a rounded border with the
+  title on the left of its first row and the key hints on the right. Search,
+  the filter panel, and the command bar dock under the footer instead of above
+  the view; status visibility, export, theme, and confirmation float over it.
+- The active search and filters are named in the footer rule, with the issue
+  count and `c clear`, instead of a banner above the view.
+- The issue forms lay their fields out one per row with a label column, and
+  mark edited fields in the edit form.
+
+### Fixed
+- The help overlay fits the terminal and scrolls with the arrows, `j`/`k`, and
+  `PgUp`/`PgDn`. It owns the keyboard while open, so keys no longer reach the
+  view behind it, and `Esc` or `q` close it as well as `?`. The terminal
+  settings it listed live in `bdui --help` and the README.
+
 ## [0.4.0] - 2026-09-22
 
 ### Added

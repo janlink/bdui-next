@@ -123,14 +123,12 @@ export function listBudget(view: ListView, height: number, extraRows = 0): ListB
   };
 }
 
-// Rows the shared chrome above a view occupies when open. Each value covers the
-// component's own content plus its border and bottom margin, so a view can
-// subtract them to size its scrollable body.
+// Rows the shared chrome docked under a view occupies when open: a frame's
+// border and title row around one input row, or around the filter columns.
 export const CHROME_HEIGHT = {
-  filtersBanner: 4,
-  searchInput: 5,
-  filterPanel: 16,
-  commandBar: 3,
+  searchInput: 3 + 1,
+  filterPanel: 3 + 7,
+  commandBar: 3 + 1,
 } as const;
 
 // Beads priorities (0 is most urgent, 4 is backlog)
@@ -241,22 +239,6 @@ export function hasActiveFilters(filter: {
     filter.priority !== undefined ||
     (filter.tags && filter.tags.length > 0)
   );
-}
-
-// Count active filters
-export function countActiveFilters(filter: {
-  assignee?: string;
-  tags?: string[];
-  status?: string;
-  priority?: number;
-}, searchQuery: string): number {
-  let count = 0;
-  if (searchQuery.trim()) count++;
-  if (filter.assignee) count++;
-  if (filter.status) count++;
-  if (filter.priority !== undefined) count++;
-  if (filter.tags && filter.tags.length > 0) count++;
-  return count;
 }
 
 // Form validation rules
