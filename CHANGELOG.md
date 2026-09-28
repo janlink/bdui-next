@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PgUp`/`PgDn`. It owns the keyboard while open, so keys no longer reach the
   view behind it, and `Esc` or `q` close it as well as `?`. The terminal
   settings it listed live in `bdui --help` and the README.
+- The filter panel scrolls the assignee and tag lists with the selection
+  instead of moving it past the fifth option out of sight, and counts the
+  options hidden above and below.
+- `PgUp`/`PgDn` no longer page the detail description behind the status
+  visibility panel.
 
 ## [0.4.0] - 2026-09-22
 
