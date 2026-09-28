@@ -3,6 +3,7 @@ import { descriptionLines, detailPagingIsActive, getDescriptionPage, pageLines, 
 import { getGlyphs } from '../session/glyphs';
 import { lineText } from '../utils/markdown';
 import { FOOTER_HINT_WORDS } from './Footer';
+import { useBeadsStore } from '../state/store';
 
 test('description pages preserve all content for scrolling', () => {
   const description = 'first line\n' + 'word '.repeat(30) + 'final marker';
@@ -56,19 +57,16 @@ test('a title cut after its last row keeps the spaces of its tail', () => {
 });
 
 test('detail paging yields input ownership to every overlay', () => {
-  const closed = {
-    showSearch: false,
-    showFilter: false,
-    showExportDialog: false,
-    showThemeSelector: false,
-    showJumpToPage: false,
-    showHelp: false,
-    showConfirmDialog: false,
-  };
+  const flags = [
+    'showHelp', 'showSearch', 'showFilter', 'showExportDialog',
+    'showThemeSelector', 'showJumpToPage', 'showVisibilityPanel', 'showConfirmDialog',
+  ] as const;
 
-  expect(detailPagingIsActive(closed)).toBe(true);
-  for (const overlay of Object.keys(closed) as Array<keyof typeof closed>) {
-    expect(detailPagingIsActive({ ...closed, [overlay]: true })).toBe(false);
+  expect(detailPagingIsActive(useBeadsStore.getState())).toBe(true);
+  for (const flag of flags) {
+    useBeadsStore.setState({ [flag]: true });
+    expect(detailPagingIsActive(useBeadsStore.getState())).toBe(false);
+    useBeadsStore.setState({ [flag]: false });
   }
 });
 

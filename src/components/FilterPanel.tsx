@@ -4,11 +4,35 @@ import { useBeadsStore } from '../state/store';
 import { PRIORITY_LABELS } from '../utils/constants';
 import { STATUS_LABELS, type StatusKey } from '../utils/visibility';
 import { Frame } from './Frame';
+import type { GlyphSet } from '../session/glyphs';
 
-/** A column heading, its visible options, and the "+N more" row. */
-export const FILTER_BODY_ROWS = 1 + 5 + 1;
+const OPTION_ROWS = 5;
+
+/** A column heading, its visible options, and the row counting the hidden ones. */
+export const FILTER_BODY_ROWS = 1 + OPTION_ROWS + 1;
+
+export interface OptionWindow {
+  start: number;
+  end: number;
+  above: number;
+  below: number;
+}
+
+/** The slice of a column's options that keeps the selection in view. */
+export function optionWindow(count: number, selected: number, rows = OPTION_ROWS): OptionWindow {
+  const start = Math.max(0, Math.min(selected - Math.floor(rows / 2), count - rows));
+  const end = Math.min(count, start + rows);
+  return { start, end, above: start, below: count - end };
+}
 
 const statusLabel = (status: string) => STATUS_LABELS[status as StatusKey] ?? status;
+
+function hiddenOptions({ above, below }: OptionWindow, glyphs: GlyphSet): string {
+  return [
+    above > 0 ? `${glyphs.scrollUp} ${above} above` : '',
+    below > 0 ? `${glyphs.scrollDown} ${below} below` : '',
+  ].filter(Boolean).join('  ');
+}
 
 export function FilterPanel() {
   const data = useBeadsStore(state => state.data);
@@ -54,6 +78,9 @@ export function FilterPanel() {
   };
 
   const currentOptions = getCurrentOptions();
+  const activeIndex = Math.min(selectedIndex, Math.max(0, currentOptions.length - 1));
+  const assigneeWindow = optionWindow(uniqueAssignees.length, selectedFilterType === 'assignee' ? activeIndex : 0);
+  const tagWindow = optionWindow(uniqueTags.length, selectedFilterType === 'tags' ? activeIndex : 0);
 
   useInput((input, key) => {
     // Close with Escape
@@ -74,18 +101,19 @@ export function FilterPanel() {
 
     // Navigate options
     if (key.upArrow || input === 'k') {
-      setSelectedIndex(Math.max(0, selectedIndex - 1));
+      setSelectedIndex(Math.max(0, activeIndex - 1));
       return;
     }
 
     if (key.downArrow || input === 'j') {
-      setSelectedIndex(Math.min(currentOptions.length - 1, selectedIndex + 1));
+      setSelectedIndex(Math.max(0, Math.min(currentOptions.length - 1, activeIndex + 1)));
       return;
     }
 
     // Toggle selection with Enter or Space
     if (key.return || input === ' ') {
-      const value = currentOptions[selectedIndex];
+      const value = currentOptions[activeIndex];
+      if (value === undefined) return;
 
       switch (selectedFilterType) {
         case 'assignee':
@@ -175,17 +203,20 @@ export function FilterPanel() {
           {uniqueAssignees.length === 0 ? (
             <Text {...theme.ink.faint}>  No assignees</Text>
           ) : (
-            uniqueAssignees.slice(0, 5).map((assignee, idx) => (
-              <Box key={assignee}>
-                <Text color={selectedFilterType === 'assignee' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
-                  {selectedFilterType === 'assignee' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
-                  {isSelected('assignee', assignee) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
-                  {assignee}
-                </Text>
-              </Box>
-            ))
+            uniqueAssignees.slice(assigneeWindow.start, assigneeWindow.end).map((assignee, offset) => {
+              const idx = assigneeWindow.start + offset;
+              return (
+                <Box key={assignee}>
+                  <Text color={selectedFilterType === 'assignee' && idx === activeIndex ? theme.colors.primary : theme.colors.text}>
+                    {selectedFilterType === 'assignee' && idx === activeIndex ? `${glyphs.selectArrow} ` : '  '}
+                    {isSelected('assignee', assignee) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
+                    {assignee}
+                  </Text>
+                </Box>
+              );
+            })
           )}
-          {uniqueAssignees.length > 5 && <Text {...theme.ink.faint}>  +{uniqueAssignees.length - 5} more</Text>}
+          {(assigneeWindow.above > 0 || assigneeWindow.below > 0) && <Text {...theme.ink.faint}>  {hiddenOptions(assigneeWindow, glyphs)}</Text>}
         </Box>
 
         {/* Tags Filter */}
@@ -200,17 +231,20 @@ export function FilterPanel() {
           {uniqueTags.length === 0 ? (
             <Text {...theme.ink.faint}>  No tags</Text>
           ) : (
-            uniqueTags.slice(0, 5).map((tag, idx) => (
-              <Box key={tag}>
-                <Text color={selectedFilterType === 'tags' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
-                  {selectedFilterType === 'tags' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
-                  {isSelected('tags', tag) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
-                  {tag}
-                </Text>
-              </Box>
-            ))
+            uniqueTags.slice(tagWindow.start, tagWindow.end).map((tag, offset) => {
+              const idx = tagWindow.start + offset;
+              return (
+                <Box key={tag}>
+                  <Text color={selectedFilterType === 'tags' && idx === activeIndex ? theme.colors.primary : theme.colors.text}>
+                    {selectedFilterType === 'tags' && idx === activeIndex ? `${glyphs.selectArrow} ` : '  '}
+                    {isSelected('tags', tag) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
+                    {tag}
+                  </Text>
+                </Box>
+              );
+            })
           )}
-          {uniqueTags.length > 5 && <Text {...theme.ink.faint}>  +{uniqueTags.length - 5} more</Text>}
+          {(tagWindow.above > 0 || tagWindow.below > 0) && <Text {...theme.ink.faint}>  {hiddenOptions(tagWindow, glyphs)}</Text>}
         </Box>
 
         {/* Priority Filter */}
@@ -224,8 +258,8 @@ export function FilterPanel() {
           </Text>
           {priorities.map((priority, idx) => (
             <Box key={priority}>
-              <Text color={selectedFilterType === 'priority' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
-                {selectedFilterType === 'priority' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+              <Text color={selectedFilterType === 'priority' && idx === activeIndex ? theme.colors.primary : theme.colors.text}>
+                {selectedFilterType === 'priority' && idx === activeIndex ? `${glyphs.selectArrow} ` : '  '}
                 {isSelected('priority', priority) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                 {getPriorityLabel(priority)}
               </Text>
@@ -244,8 +278,8 @@ export function FilterPanel() {
           </Text>
           {statuses.map((status, idx) => (
             <Box key={status}>
-              <Text color={selectedFilterType === 'status' && idx === selectedIndex ? theme.colors.primary : theme.colors.text}>
-                {selectedFilterType === 'status' && idx === selectedIndex ? `${glyphs.selectArrow} ` : '  '}
+              <Text color={selectedFilterType === 'status' && idx === activeIndex ? theme.colors.primary : theme.colors.text}>
+                {selectedFilterType === 'status' && idx === activeIndex ? `${glyphs.selectArrow} ` : '  '}
                 {isSelected('status', status) ? `${glyphs.checkboxOn} ` : `${glyphs.checkboxOff} `}
                 {statusLabel(status)}
               </Text>
